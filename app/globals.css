@@ -1,160 +1,103 @@
-@import 'tailwindcss';
+/**
+ * @description
+ * Global CSS styles for the Palavra Viva application.
+ * Imports Tailwind CSS base, components, and utilities.
+ * Defines CSS variables for the application's light and dark themes based on Shadcn UI conventions.
+ * Applies the Manrope font globally (via layout.tsx).
+ * Includes Tailwind compatibility styles for v4 border defaults.
+ *
+ * @notes
+ * - Theme variables are defined using HSL format for easy customization.
+ * - The color palette is based on the Palavra Viva technical specification.
+ * - Unused theme variables (chart, sidebar) from the starter template have been removed.
+ */
+ @import 'tailwindcss';
 
-@plugin 'tailwindcss-animate';
-
-@variant dark (&:is(.dark *));
-
-@theme {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-
-  --color-chart-1: hsl(var(--chart-1));
-  --color-chart-2: hsl(var(--chart-2));
-  --color-chart-3: hsl(var(--chart-3));
-  --color-chart-4: hsl(var(--chart-4));
-  --color-chart-5: hsl(var(--chart-5));
-
-  --color-sidebar: hsl(var(--sidebar-background));
-  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
-  --color-sidebar-primary: hsl(var(--sidebar-primary));
-  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
-  --color-sidebar-accent: hsl(var(--sidebar-accent));
-  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
-  --color-sidebar-border: hsl(var(--sidebar-border));
-  --color-sidebar-ring: hsl(var(--sidebar-ring));
-
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
-}
-
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
-  }
-}
-
-@layer utilities {
-  body {
-    font-family: 'Manrope', Arial, Helvetica, sans-serif;
-  }
-}
-
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
+ @plugin 'tailwindcss-animate';
+ 
+ /* Define dark mode variant */
+ @variant dark (&:is(.dark *));
+ 
+ /* Define CSS theme variables */
+ @theme {
+   /* Light Theme Variables (derived from Palavra Viva spec) */
+   --color-background: hsl(0 0% 100%); /* White */
+   --color-foreground: hsl(210 10% 15%); /* Dark Gray (Primary Text) */
+   --color-card: hsl(210 17% 98%); /* Very Light Gray (Secondary Background / Cards) */
+   --color-card-foreground: hsl(210 10% 15%); /* Dark Gray */
+   --color-popover: hsl(0 0% 100%); /* White */
+   --color-popover-foreground: hsl(210 10% 15%); /* Dark Gray */
+   --color-primary: hsl(41 100% 47%); /* Darker Gold (Accent / Primary Action) */
+   --color-primary-foreground: hsl(210 10% 23%); /* Dark Gray/Black (Text on Gold) */
+   --color-secondary: hsl(195 53% 79%); /* Light Blue (Highlight / Secondary Action) */
+   --color-secondary-foreground: hsl(211 100% 35%); /* Darker Blue (Text on Light Blue) */
+   --color-muted: hsl(210 16% 91%); /* Light Gray (Muted backgrounds/borders) */
+   --color-muted-foreground: hsl(208 8% 45%); /* Gray (Secondary Text) */
+   --color-accent: hsl(210 17% 96%); /* Very Light Gray (Hover states) */
+   --color-accent-foreground: hsl(210 10% 15%); /* Dark Gray */
+   --color-destructive: hsl(354 70% 54%); /* Red (Error) */
+   --color-destructive-foreground: hsl(0 0% 100%); /* White (Text on Red) */
+   --color-border: hsl(210 16% 91%); /* Light Gray */
+   --color-input: hsl(210 16% 91%); /* Light Gray */
+   --color-ring: hsl(41 100% 47%); /* Darker Gold (Focus Rings) */
+ 
+   /* Radius variables (kept from template) */
+   --radius-lg: 0.5rem;
+   --radius-md: calc(0.5rem - 2px);
+   --radius-sm: calc(0.5rem - 4px);
+ }
+ 
+ /* Dark theme overrides applied via .dark class on html/body */
+ .dark {
+   --color-background: hsl(210 10% 15%); /* Dark Gray */
+   --color-foreground: hsl(210 17% 98%); /* Very Light Gray */
+   --color-card: hsl(210 10% 23%); /* Darker Gray */
+   --color-card-foreground: hsl(210 17% 98%); /* Very Light Gray */
+   --color-popover: hsl(210 10% 23%); /* Darker Gray */
+   --color-popover-foreground: hsl(210 17% 98%); /* Very Light Gray */
+   --color-primary: hsl(51 100% 50%); /* Gold (Lighter for dark mode) */
+   --color-primary-foreground: hsl(210 10% 23%); /* Dark Gray/Black */
+   --color-secondary: hsl(197 71% 73%); /* Sky Blue */
+   --color-secondary-foreground: hsl(210 100% 20%); /* Darker Blue */
+   --color-muted: hsl(210 9% 31%); /* Gray */
+   --color-muted-foreground: hsl(210 16% 74%); /* Light Gray */
+   --color-accent: hsl(210 9% 31%); /* Gray (Hover states) */
+   --color-accent-foreground: hsl(210 17% 98%); /* Very Light Gray */
+   --color-destructive: hsl(354 70% 65%); /* Lighter Red */
+   --color-destructive-foreground: hsl(210 10% 15%); /* Dark Gray */
+   --color-border: hsl(210 9% 31%); /* Gray */
+   --color-input: hsl(210 9% 31%); /* Gray */
+   --color-ring: hsl(51 100% 50%); /* Gold (Focus Rings) */
+ }
+ 
+ /*
+   Tailwind CSS v4 compatibility styles for border defaults.
+   The default border color changed to `currentColor`, so these ensure
+   elements without explicit border colors retain the intended border color.
+ */
+ @layer base {
+   *,
+   ::after,
+   ::before,
+   ::backdrop,
+   ::file-selector-button {
+     border-color: var(--color-border, currentColor); /* Use theme border color */
+   }
+ }
+ 
+ /* Base layer customizations */
+ @layer base {
+   /* Apply theme background and foreground colors */
+   body {
+     @apply bg-background text-foreground;
+   }
+   /* Ensure form elements inherit color for accessibility */
+   input, textarea, select, button {
+     color: inherit;
+   }
+ }
+ 
+ /* Utilities layer (can add custom utilities here if needed) */
+ @layer utilities {
+   /* Example: body font is applied via layout.tsx using Next/Font */
+ }

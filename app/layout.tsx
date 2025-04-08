@@ -28,7 +28,7 @@ import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { Manrope } from 'next/font/google';
 import { UserProvider } from '@/lib/auth';
-import { getUserWithSubscription } from '@/lib/db/queries'; // Will update this import later when the function is created
+// import { getUserWithSubscription } from '@/lib/db/queries'; // Will update this import later when the function is created
 
 // Load the Manrope font with the Latin subset
 const manrope = Manrope({ subsets: ['latin'] });
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   title: 'Palavra Viva - Seu Devocional Diário',
   description:
     'App devocional cristão com versículos, reflexões, áudio e mais.',
-  themeColor: '#ADD8E6', // Light Blue - Can be refined later
+  // themeColor: '#ADD8E6', // Moved to viewport export below
 };
 
 /**
@@ -52,6 +52,7 @@ export const metadata: Metadata = {
  */
 export const viewport: Viewport = {
   maximumScale: 1,
+  themeColor: '#ADD8E6', // Light Blue - Used for browser UI theming
 };
 
 /**
@@ -69,7 +70,9 @@ export default function RootLayout({
 }) {
   // Fetch the user data server-side. This promise will be resolved by the UserProvider.
   // Note: We'll update `getUser` to `getUserWithSubscription` later as per the plan.
-  let userPromise = getUserWithSubscription(); // Placeholder, function needs implementation
+  // let userPromise = getUserWithSubscription(); // Placeholder, function needs implementation
+  // TODO: Remove this placeholder when getUserWithSubscription is ready
+  let userPromise = Promise.resolve(null); // Temporary placeholder
 
   return (
     <html
