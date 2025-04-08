@@ -1,5 +1,6 @@
 {
   "private": true,
+  "description": "Palavra Viva: A Christian devotional app for the Brazilian evangelical audience, offering daily verses, reflections, audio content, and light spiritual interactions.",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
