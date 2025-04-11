@@ -1628,7 +1628,7 @@ Okay, planning the implementation steps for "Palavra Viva".
     -   **Step Dependencies**: Step 4.2, Step 4.3
     -   **User Instructions**: None
 
--   [ ] Step 4.5: Create Placeholder Pages for App Sections
+-   [x] Step 4.5: Create Placeholder Pages for App Sections
     -   **Task**: Create placeholder pages for the other main sections linked from the bottom navigation.
     -   **Files**:
         -   `app/(app)/planos/page.tsx`: Create server component displaying "Planos de Leitura".
@@ -1640,7 +1640,7 @@ Okay, planning the implementation steps for "Palavra Viva".
 
 ## Phase 5: Daily Content Feature Implementation
 
--   [ ] Step 5.1: Setup OpenAI & ElevenLabs Clients
+-   [x] Step 5.1: Setup OpenAI & ElevenLabs Clients
     -   **Task**: Create service clients for OpenAI and ElevenLabs APIs.
     -   **Files**:
         -   `lib/content/openai.ts`: Create file. Initialize OpenAI client (e.g., using `openai` library) with `process.env.OPENAI_API_KEY`. Export helper functions for specific chat completion calls (e.g., `getVerseSuggestion`, `generateReflection`).
@@ -1648,14 +1648,14 @@ Okay, planning the implementation steps for "Palavra Viva".
     -   **Step Dependencies**: Step 1.2
     -   **User Instructions**: Run `pnpm install openai elevenlabs` (or relevant libraries).
 
--   [ ] Step 5.2: Implement Bible Text Source (Mock)
+-   [x] Step 5.2: Implement Bible Text Source (Mock)
     -   **Task**: Create a placeholder function to retrieve Bible verse text.
     -   **Files**:
         -   `lib/content/bible.ts`: Create file. Implement `async function getVerseText(verseRef: string): Promise<string>` that returns a hardcoded string like `"Mock text for ${verseRef}"`.
     -   **Step Dependencies**: None
     -   **User Instructions**: Later, replace the mock implementation with a real Bible API client or local data lookup based on the chosen source.
 
--   [ ] Step 5.3: Implement `generateDailyContent` Server Action
+-   [x] Step 5.3: Implement `generateDailyContent` Server Action
     -   **Task**: Create the server action responsible for generating the daily verse, reflection, and audio, and storing it in the database.
     -   **Files**:
         -   `lib/content/actions.ts`: Create file. Implement `generateDailyContent(date)` server action (`"use server";`). Logic: Check if content exists for `date`. Call `getVerseSuggestion` (OpenAI). Call `getVerseText` (Bible Source). Call `generateReflection` (OpenAI). Call `generateAudio` (ElevenLabs) twice (free/premium voice IDs - store these IDs in constants or env). Insert results into `daily_content` table using Drizzle. Include `try...catch` blocks for API calls and DB operations, logging errors.

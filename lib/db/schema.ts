@@ -3,7 +3,7 @@
  * Defines the database schema for the Palavra Viva application using Drizzle ORM.
  * Includes tables for users, teams (repurposed for subscriptions), team members,
  * activity logs, invitations, daily content, reading plans, plan days, user progress,
- * and prayer pairs.
+ * prayer pairs, and Bible content (books, chapters, verses).
  * Also defines relationships between tables and exports inferred TypeScript types.
  *
  * @notes
@@ -11,6 +11,7 @@
  * - `team_members` is kept for template compatibility but primarily links a user to their own account record.
  * - Enum `ActivityType` includes actions specific to Palavra Viva.
  * - The `prayer_pairs` table includes a CHECK constraint (`user1_id < user2_id`) to ensure uniqueness and order.
+ * - Bible tables (`books`, `chapters`, `verses`) are included here, assuming data is populated separately (e.g., via `scripts/import-bible.ts`).
  */
 import {
   pgTable,
@@ -25,16 +26,15 @@ import {
   boolean,
   uniqueIndex,
   check,
-  pgEnum, // Import pgEnum
-  index, // Import index for non-unique indexes
-  unique, // Import unique for multi-column constraints
+  pgEnum,
+  index,
+  unique,
 } from 'drizzle-orm/pg-core';
-import { relations, sql } from 'drizzle-orm'; // Import sql from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm';
 
 // --- Enums ---
 
 // Enum for different types of activities logged
-// Updated in Step 2.4
 export const activityTypeEnum = pgEnum('activity_type', [
   // Auth & Account
   'SIGN_UP',
@@ -65,59 +65,51 @@ export const activityTypeEnum = pgEnum('activity_type', [
 
 // --- Users Table ---
 // Stores user account information, authentication details, and Palavra Viva specific preferences.
-// Updated in Step 2.1
 export const users = pgTable('users', {
-  // Core user fields (from template)
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }),
   email: varchar('email', { length: 255 }).notNull().unique(),
   passwordHash: text('password_hash').notNull(),
-  role: varchar('role', { length: 20 }).notNull().default('member'), // Kept for potential admin roles
+  role: varchar('role', { length: 20 }).notNull().default('member'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
     .notNull()
     .defaultNow()
-    .$onUpdate(() => new Date()), // Auto-update timestamp
+    .$onUpdate(() => new Date()),
   deletedAt: timestamp('deleted_at'),
-
-  // Palavra Viva specific fields (Added in Step 2.1)
-  notification_time: time('notification_time').default('07:00:00'), // User preferred notification time (HH:MM:SS)
-  notification_tz: varchar('notification_tz', { length: 50 }) // User IANA timezone string
+  notification_time: time('notification_time').default('07:00:00'),
+  notification_tz: varchar('notification_tz', { length: 50 })
     .notNull()
     .default('America/Sao_Paulo'),
-  push_subscription: jsonb('push_subscription'), // Stores Web Push API PushSubscription object
-  theme: varchar('theme', { length: 50 }).notNull().default('light'), // User preferred theme ('light', 'dark', 'gold')
-  trial_end_date: timestamp('trial_end_date'), // Tracks when the free premium trial ends
-  requested_pairing_at: timestamp('requested_pairing_at'), // Tracks when user requested prayer pairing
+  push_subscription: jsonb('push_subscription'),
+  theme: varchar('theme', { length: 50 }).notNull().default('light'),
+  trial_end_date: timestamp('trial_end_date'),
+  requested_pairing_at: timestamp('requested_pairing_at'),
 });
 
 // --- Teams Table ---
 // Repurposed to store individual user subscription and account details (1 team per user for Palavra Viva).
-// Updated in Step 2.2
 export const teams = pgTable(
   'teams',
   {
     id: serial('id').primaryKey(),
-    // Link to the user this account/subscription belongs to (Added in Step 2.2)
     userId: integer('user_id')
       .notNull()
-      .unique() // Ensure one team record per user
-      .references(() => users.id, { onDelete: 'cascade' }), // If user is deleted, delete their account record
-    name: varchar('name', { length: 100 }).notNull(), // e.g., "{User Email}'s Account"
+      .unique()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 100 }).notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at')
       .notNull()
       .defaultNow()
-      .$onUpdate(() => new Date()), // Auto-update timestamp
-    // Stripe related fields (from template - used for subscription management)
+      .$onUpdate(() => new Date()),
     stripeCustomerId: text('stripe_customer_id').unique(),
     stripeSubscriptionId: text('stripe_subscription_id').unique(),
     stripeProductId: text('stripe_product_id'),
-    planName: varchar('plan_name', { length: 50 }), // e.g., 'free', 'premium'
-    subscriptionStatus: varchar('subscription_status', { length: 20 }), // e.g., 'trialing', 'active', 'canceled'
+    planName: varchar('plan_name', { length: 50 }),
+    subscriptionStatus: varchar('subscription_status', { length: 20 }),
   },
   (table) => {
-    // Indexes for frequently queried fields
     return {
       userIdx: uniqueIndex('teams_user_id_idx').on(table.userId),
       stripeCustomerIdIdx: uniqueIndex('teams_stripe_customer_id_idx').on(
@@ -132,25 +124,20 @@ export const teams = pgTable(
 
 // --- Team Members Table ---
 // Links users to teams. In Palavra Viva's case (1 team per user), primarily links a user to their own account record.
-// Kept for compatibility with the original template's structure. Role is typically 'owner'.
-// Updated in Step 2.3 to ensure cascading deletes.
 export const teamMembers = pgTable(
   'team_members',
   {
     id: serial('id').primaryKey(),
-    // Reference to the user. If the user is deleted, this membership record is also deleted.
     userId: integer('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    // Reference to the team (user's account record). If the team record is deleted, this membership is also deleted.
     teamId: integer('team_id')
       .notNull()
       .references(() => teams.id, { onDelete: 'cascade' }),
-    role: varchar('role', { length: 50 }).notNull(), // Usually 'owner' for Palavra Viva
+    role: varchar('role', { length: 50 }).notNull(),
     joinedAt: timestamp('joined_at').notNull().defaultNow(),
   },
   (table) => {
-    // Ensure a user can only be on a specific team once
     return {
       userTeamUnique: uniqueIndex('user_team_unique_idx').on(
         table.userId,
@@ -162,23 +149,19 @@ export const teamMembers = pgTable(
 
 // --- Activity Logs Table ---
 // Records significant user actions within the application.
-// Updated in Step 2.4
 export const activityLogs = pgTable('activity_logs', {
   id: serial('id').primaryKey(),
   teamId: integer('team_id')
     .notNull()
-    .references(() => teams.id, { onDelete: 'cascade' }), // Link to the user's account record
-  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }), // Keep log even if user is deleted (optional, depends on policy)
-  // Use the pgEnum for the action type
+    .references(() => teams.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
   action: activityTypeEnum('action').notNull(),
   timestamp: timestamp('timestamp').notNull().defaultNow(),
-  ipAddress: varchar('ip_address', { length: 45 }), // Store requesting IP address
+  ipAddress: varchar('ip_address', { length: 45 }),
 });
 
 // --- Invitations Table ---
 // Handles invitations for users to join teams (likely unused in Palavra Viva MVP).
-// Kept for template compatibility.
-// Updated in Step 2.3 (cascading deletes)
 export const invitations = pgTable('invitations', {
   id: serial('id').primaryKey(),
   teamId: integer('team_id')
@@ -190,30 +173,29 @@ export const invitations = pgTable('invitations', {
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   invitedAt: timestamp('invited_at').notNull().defaultNow(),
-  status: varchar('status', { length: 20 }).notNull().default('pending'), // 'pending', 'accepted', 'declined'
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
 });
 
 // --- Daily Content Table ---
-// Stores the automatically generated daily devotional content. (Added in Step 2.5)
+// Stores the automatically generated daily devotional content.
 export const daily_content = pgTable(
   'daily_content',
   {
     id: serial('id').primaryKey(),
-    contentDate: date('content_date').notNull().unique(), // The specific date this content is for
-    verseRef: varchar('verse_ref', { length: 100 }).notNull(), // Bible verse reference (e.g., "João 3:16")
-    verseText: text('verse_text').notNull(), // Full text of the Bible verse
-    reflectionText: text('reflection_text').notNull(), // AI-generated reflection text
-    audioUrlFree: text('audio_url_free'), // URL to the standard quality audio file (nullable if generation fails)
-    audioUrlPremium: text('audio_url_premium'), // URL to the premium quality audio file (nullable if generation fails)
+    contentDate: date('content_date').notNull().unique(),
+    verseRef: varchar('verse_ref', { length: 100 }).notNull(),
+    verseText: text('verse_text').notNull(),
+    reflectionText: text('reflection_text').notNull(),
+    audioUrlFree: text('audio_url_free'),
+    audioUrlPremium: text('audio_url_premium'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at')
       .notNull()
       .defaultNow()
-      .$onUpdate(() => new Date()), // Auto-update timestamp
+      .$onUpdate(() => new Date()),
   },
   (table) => {
     return {
-      // Index on contentDate for efficient querying by date
       contentDateIdx: uniqueIndex('daily_content_date_idx').on(table.contentDate),
     };
   },
@@ -221,25 +203,23 @@ export const daily_content = pgTable(
 
 // --- Reading Plans Table ---
 // Stores information about available Bible reading plans.
-// Added in Step 2.6
 export const reading_plans = pgTable(
   'reading_plans',
   {
     id: serial('id').primaryKey(),
-    title: varchar('title', { length: 255 }).notNull(), // Title of the reading plan
-    description: text('description'), // Optional description of the plan
-    duration_days: integer('duration_days').notNull(), // Number of days the plan lasts (e.g., 7, 30)
-    theme: varchar('theme', { length: 100 }), // Optional theme category (e.g., 'Fé', 'Perdão')
-    is_premium: boolean('is_premium').notNull().default(false), // Flag for premium-only plans (future feature)
+    title: varchar('title', { length: 255 }).notNull(),
+    description: text('description'),
+    duration_days: integer('duration_days').notNull(),
+    theme: varchar('theme', { length: 100 }),
+    is_premium: boolean('is_premium').notNull().default(false),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at')
       .notNull()
       .defaultNow()
-      .$onUpdate(() => new Date()), // Auto-update timestamp
+      .$onUpdate(() => new Date()),
   },
   (table) => {
     return {
-      // Add non-unique indexes for potential filtering
       themeIdx: index('reading_plans_theme_idx').on(table.theme),
       isPremiumIdx: index('reading_plans_is_premium_idx').on(table.is_premium),
     };
@@ -248,123 +228,187 @@ export const reading_plans = pgTable(
 
 // --- Reading Plan Days Table ---
 // Stores the specific content (verses) for each day of a reading plan.
-// Added in Step 2.7
-export const reading_plan_days = pgTable('reading_plan_days', {
-  id: serial('id').primaryKey(),
-  planId: integer('plan_id') // Foreign key referencing the reading plan
-    .notNull()
-    .references(() => reading_plans.id, { onDelete: 'cascade' }), // Cascade delete if the plan is removed
-  dayNumber: integer('day_number').notNull(), // 1-based index for the day within the plan
-  verseRef: varchar('verse_ref', { length: 100 }).notNull(), // Bible reference(s) for the day
-  verseText: text('verse_text').notNull(), // The actual text of the verse(s) for the day
-  content: text('content'), // Optional additional content/thought for the day (nullable)
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at')
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()), // Auto-update timestamp
-}, (table) => {
-  return {
-    // Ensure each day number is unique within a given plan
-    planDayUnique: unique('reading_plan_days_plan_id_day_number_unique').on(table.planId, table.dayNumber),
-    // Index on planId for faster lookup of a plan's days
-    planIdIdx: index('reading_plan_days_plan_id_idx').on(table.planId),
-  };
-});
-
+export const reading_plan_days = pgTable(
+  'reading_plan_days',
+  {
+    id: serial('id').primaryKey(),
+    planId: integer('plan_id')
+      .notNull()
+      .references(() => reading_plans.id, { onDelete: 'cascade' }),
+    dayNumber: integer('day_number').notNull(),
+    verseRef: varchar('verse_ref', { length: 100 }).notNull(),
+    verseText: text('verse_text').notNull(),
+    content: text('content'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => {
+    return {
+      planDayUnique: unique('reading_plan_days_plan_id_day_number_unique').on(
+        table.planId,
+        table.dayNumber,
+      ),
+      planIdIdx: index('reading_plan_days_plan_id_idx').on(table.planId),
+    };
+  },
+);
 
 // --- User Reading Progress Table ---
 // Tracks the progress of users through specific reading plans.
-// Added in Step 2.8
-export const user_reading_progress = pgTable('user_reading_progress', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id') // Foreign key referencing the user
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }), // Cascade delete if the user is removed
-  planId: integer('plan_id') // Foreign key referencing the reading plan
-    .notNull()
-    .references(() => reading_plans.id, { onDelete: 'cascade' }), // Cascade delete if the plan is removed
-  currentDay: integer('current_day').notNull().default(1), // The next day the user needs to read (1-based index)
-  completedAt: timestamp('completed_at'), // Timestamp when the user finished the entire plan (nullable)
-  startedAt: timestamp('started_at').notNull().defaultNow(), // Timestamp when the user started the plan
-  lastUpdated: timestamp('last_updated') // Timestamp when the progress was last updated
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-}, (table) => {
-  return {
-    // Ensure a user has only one progress record per plan
-    userPlanUnique: unique('user_reading_progress_user_id_plan_id_unique').on(table.userId, table.planId),
-    // Indexes for efficient lookup by user or plan
-    userIdIdx: index('user_reading_progress_user_id_idx').on(table.userId),
-    planIdIdx: index('user_reading_progress_plan_id_idx').on(table.planId),
-  };
-});
-
+export const user_reading_progress = pgTable(
+  'user_reading_progress',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    planId: integer('plan_id')
+      .notNull()
+      .references(() => reading_plans.id, { onDelete: 'cascade' }),
+    currentDay: integer('current_day').notNull().default(1),
+    completedAt: timestamp('completed_at'),
+    startedAt: timestamp('started_at').notNull().defaultNow(),
+    lastUpdated: timestamp('last_updated')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => {
+    return {
+      userPlanUnique: unique('user_reading_progress_user_id_plan_id_unique').on(
+        table.userId,
+        table.planId,
+      ),
+      userIdIdx: index('user_reading_progress_user_id_idx').on(table.userId),
+      planIdIdx: index('user_reading_progress_plan_id_idx').on(table.planId),
+    };
+  },
+);
 
 // --- Prayer Pairs Table ---
 // Stores information about anonymous prayer pairings between users.
-// Added in Step 2.9
-export const prayer_pairs = pgTable('prayer_pairs', {
-  id: serial('id').primaryKey(),
-  // References to the two users in the pair. Cascade delete if a user is deleted.
-  user1_id: integer('user1_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  user2_id: integer('user2_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at').notNull().defaultNow(), // When the pair was formed
-  // Timestamps to track when each user indicated they prayed for the other
-  user1_last_prayed_at: timestamp('user1_last_prayed_at'),
-  user2_last_prayed_at: timestamp('user2_last_prayed_at'),
-  // Timestamps to track when each user was notified that their partner prayed (for "Someone prayed for you" message)
-  user1_notified_at: timestamp('user1_notified_at'),
-  user2_notified_at: timestamp('user2_notified_at'),
-  // Flag indicating if the pair is currently considered active (e.g., for pairing logic)
-  is_active: boolean('is_active').notNull().default(true),
-}, (table) => {
-  return {
-    // Indexes for efficient lookup by user or active status
-    user1Idx: index('prayer_pairs_user1_id_idx').on(table.user1_id),
-    user2Idx: index('prayer_pairs_user2_id_idx').on(table.user2_id),
-    isActiveIdx: index('prayer_pairs_is_active_idx').on(table.is_active),
-    // CHECK constraint to ensure user1_id is always less than user2_id
-    // This guarantees uniqueness (user1, user2) vs (user2, user1) and simplifies queries
-    // Moved here and referencing columns via the `table` object.
-    check_user_order: check('user_id_order', sql`${table.user1_id} < ${table.user2_id}`),
-  };
-});
+export const prayer_pairs = pgTable(
+  'prayer_pairs',
+  {
+    id: serial('id').primaryKey(),
+    user1_id: integer('user1_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    user2_id: integer('user2_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    user1_last_prayed_at: timestamp('user1_last_prayed_at'),
+    user2_last_prayed_at: timestamp('user2_last_prayed_at'),
+    user1_notified_at: timestamp('user1_notified_at'),
+    user2_notified_at: timestamp('user2_notified_at'),
+    is_active: boolean('is_active').notNull().default(true),
+  },
+  (table) => {
+    return {
+      user1Idx: index('prayer_pairs_user1_id_idx').on(table.user1_id),
+      user2Idx: index('prayer_pairs_user2_id_idx').on(table.user2_id),
+      isActiveIdx: index('prayer_pairs_is_active_idx').on(table.is_active),
+      check_user_order: check('user_id_order', sql`${table.user1_id} < ${table.user2_id}`),
+    };
+  },
+);
+
+// --- Bible Content Tables (Moved from import script) ---
+
+// Bible Books Table
+export const books = pgTable(
+  'books',
+  {
+    id: serial('id').primaryKey(),
+    name: text('name').notNull(),
+    abbreviation: varchar('abbreviation', { length: 10 }).notNull(),
+    testament: varchar('testament', { length: 2 }).notNull(), // 'VT' or 'NT'
+    version: varchar('version', { length: 10 }).notNull(), // e.g., 'nvi'
+    createdAt: timestamp('created_at').defaultNow(), // Removed withTimezone for consistency
+  },
+  (table) => {
+    return {
+      abbreviationVersionUnq: uniqueIndex(
+        'books_abbreviation_version_unique_idx',
+      ).on(table.abbreviation, table.version),
+    };
+  },
+);
+
+// Bible Chapters Table
+export const chapters = pgTable(
+  'chapters',
+  {
+    id: serial('id').primaryKey(),
+    bookId: integer('book_id')
+      .notNull()
+      .references(() => books.id, { onDelete: 'cascade' }),
+    chapterNumber: integer('chapter_number').notNull(),
+    createdAt: timestamp('created_at').defaultNow(), // Removed withTimezone
+  },
+  (table) => {
+    return {
+      bookChapterUnq: uniqueIndex('chapters_book_id_chapter_number_unique_idx').on(
+        table.bookId,
+        table.chapterNumber,
+      ),
+    };
+  },
+);
+
+// Bible Verses Table
+export const verses = pgTable(
+  'verses',
+  {
+    id: serial('id').primaryKey(),
+    chapterId: integer('chapter_id')
+      .notNull()
+      .references(() => chapters.id, { onDelete: 'cascade' }),
+    verseNumber: integer('verse_number').notNull(),
+    text: text('text').notNull(),
+    createdAt: timestamp('created_at').defaultNow(), // Removed withTimezone
+  },
+  (table) => {
+    return {
+      chapterVerseUnq: uniqueIndex('verses_chapter_id_verse_number_unique_idx').on(
+        table.chapterId,
+        table.verseNumber,
+      ),
+    };
+  },
+);
 
 // --- Relationships ---
 
-// Teams relations (Updated in Step 2.2)
+// Teams relations
 export const teamsRelations = relations(teams, ({ many, one }) => ({
   teamMembers: many(teamMembers),
   activityLogs: many(activityLogs),
   invitations: many(invitations),
-  // Added one-to-one relation back to the user owning this account/subscription record
   user: one(users, {
     fields: [teams.userId],
     references: [users.id],
-    relationName: 'userAccount', // Specify a name for clarity
+    relationName: 'userAccount',
   }),
 }));
 
-// Users relations (Updated in Step 2.2, 2.8, 2.9, and corrected relation definition)
+// Users relations
 export const usersRelations = relations(users, ({ many, one }) => ({
-  teamMembers: many(teamMembers), // User can be part of multiple teams (though 1:1 for Palavra Viva)
-  invitationsSent: many(invitations, { relationName: 'invitedBy' }), // Invitations sent by this user
-  activityLogs: many(activityLogs), // Activity logs associated with this user
-  // Corrected: Specify fields and references for the one-to-one relation
-  account: one(teams, { // Changed name from 'account' to avoid conflict with 'team' below if needed
-      fields: [users.id],         // Field from the 'users' table
-      references: [teams.userId], // Corresponding foreign key field in the 'teams' table
-      relationName: 'userAccount' // Keep relationName consistent
+  teamMembers: many(teamMembers),
+  invitationsSent: many(invitations, { relationName: 'invitedBy' }),
+  activityLogs: many(activityLogs),
+  account: one(teams, {
+    fields: [users.id],
+    references: [teams.userId],
+    relationName: 'userAccount',
   }),
-  readingProgress: many(user_reading_progress), // User's progress in various reading plans
-  prayerPairsAsUser1: many(prayer_pairs, { relationName: 'user1' }), // Pairs where this user is user1
-  prayerPairsAsUser2: many(prayer_pairs, { relationName: 'user2' }), // Pairs where this user is user2
+  readingProgress: many(user_reading_progress),
+  prayerPairsAsUser1: many(prayer_pairs, { relationName: 'user1' }),
+  prayerPairsAsUser2: many(prayer_pairs, { relationName: 'user2' }),
 }));
 
 // Invitations relations
@@ -376,11 +420,11 @@ export const invitationsRelations = relations(invitations, ({ one }) => ({
   invitedByUser: one(users, {
     fields: [invitations.invitedBy],
     references: [users.id],
-    relationName: 'invitedBy', // Matches relationName in usersRelations
+    relationName: 'invitedBy',
   }),
 }));
 
-// TeamMembers relations (Verified in Step 2.3)
+// TeamMembers relations
 export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
   user: one(users, {
     fields: [teamMembers.userId],
@@ -404,56 +448,72 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }));
 
-// DailyContent relations (No specific relations defined for now)
-// export const dailyContentRelations = relations(daily_content, ({}) => ({}));
-
-// ReadingPlans relations (Updated in Step 2.7 and 2.8)
+// ReadingPlans relations
 export const readingPlansRelations = relations(reading_plans, ({ many }) => ({
-  days: many(reading_plan_days), // A plan has many days
-  progress: many(user_reading_progress), // User progress records associated with this plan
+  days: many(reading_plan_days),
+  progress: many(user_reading_progress),
 }));
 
-// ReadingPlanDays relations (Added in Step 2.7)
+// ReadingPlanDays relations
 export const readingPlanDaysRelations = relations(reading_plan_days, ({ one }) => ({
-  plan: one(reading_plans, { // A day belongs to one plan
+  plan: one(reading_plans, {
     fields: [reading_plan_days.planId],
     references: [reading_plans.id],
   }),
 }));
 
-// UserReadingProgress relations (Added in Step 2.8)
+// UserReadingProgress relations
 export const userReadingProgressRelations = relations(user_reading_progress, ({ one }) => ({
-  user: one(users, { // Progress belongs to one user
+  user: one(users, {
     fields: [user_reading_progress.userId],
     references: [users.id],
   }),
-  plan: one(reading_plans, { // Progress relates to one plan
+  plan: one(reading_plans, {
     fields: [user_reading_progress.planId],
     references: [reading_plans.id],
   }),
 }));
 
-
-// PrayerPairs relations (Added in Step 2.9)
+// PrayerPairs relations
 export const prayerPairsRelations = relations(prayer_pairs, ({ one }) => ({
   user1: one(users, {
     fields: [prayer_pairs.user1_id],
     references: [users.id],
-    relationName: 'user1', // Relation name for clarity
+    relationName: 'user1',
   }),
   user2: one(users, {
     fields: [prayer_pairs.user2_id],
     references: [users.id],
-    relationName: 'user2', // Relation name for clarity
+    relationName: 'user2',
+  }),
+}));
+
+// Bible Tables Relations (Added)
+export const booksRelations = relations(books, ({ many }) => ({
+  chapters: many(chapters),
+}));
+
+export const chaptersRelations = relations(chapters, ({ one, many }) => ({
+  book: one(books, {
+    fields: [chapters.bookId],
+    references: [books.id],
+  }),
+  verses: many(verses),
+}));
+
+export const versesRelations = relations(verses, ({ one }) => ({
+  chapter: one(chapters, {
+    fields: [verses.chapterId],
+    references: [chapters.id],
   }),
 }));
 
 // --- Exported Types ---
 
-// Base Types (from template, adapted)
+// Base Types
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
-export type Team = typeof teams.$inferSelect; // Represents User Account/Subscription
+export type Team = typeof teams.$inferSelect;
 export type NewTeam = typeof teams.$inferInsert;
 export type TeamMember = typeof teamMembers.$inferSelect;
 export type NewTeamMember = typeof teamMembers.$inferInsert;
@@ -462,31 +522,38 @@ export type NewActivityLog = typeof activityLogs.$inferInsert;
 export type Invitation = typeof invitations.$inferSelect;
 export type NewInvitation = typeof invitations.$inferInsert;
 
-// Composite type used in queries (from template, now represents user account + single member)
+// Composite type used in queries
 export type TeamDataWithMembers = Team & {
   teamMembers: (TeamMember & {
-    user: Pick<User, 'id' | 'name' | 'email'>; // Select only needed user fields
+    user: Pick<User, 'id' | 'name' | 'email'>;
   })[];
 };
 
-// Type alias for ActivityType enum values (derived from pgEnum)
+// Type alias for ActivityType enum values
 export type ActivityType = (typeof activityTypeEnum.enumValues)[number];
 
-// Palavra Viva Specific Types (Added/Uncommented as tables are defined)
-export type DailyContent = typeof daily_content.$inferSelect; // Added in Step 2.5
-export type NewDailyContent = typeof daily_content.$inferInsert; // Added in Step 2.5
-export type ReadingPlan = typeof reading_plans.$inferSelect; // Added in Step 2.6
-export type NewReadingPlan = typeof reading_plans.$inferInsert; // Added in Step 2.6
-export type ReadingPlanDay = typeof reading_plan_days.$inferSelect; // Added in Step 2.7
-export type NewReadingPlanDay = typeof reading_plan_days.$inferInsert; // Added in Step 2.7
-export type UserReadingProgress = typeof user_reading_progress.$inferSelect; // Added in Step 2.8
-export type NewUserReadingProgress = typeof user_reading_progress.$inferInsert; // Added in Step 2.8
-export type PrayerPair = typeof prayer_pairs.$inferSelect; // Added in Step 2.9
-export type NewPrayerPair = typeof prayer_pairs.$inferInsert; // Added in Step 2.9
+// Palavra Viva Specific Types
+export type DailyContent = typeof daily_content.$inferSelect;
+export type NewDailyContent = typeof daily_content.$inferInsert;
+export type ReadingPlan = typeof reading_plans.$inferSelect;
+export type NewReadingPlan = typeof reading_plans.$inferInsert;
+export type ReadingPlanDay = typeof reading_plan_days.$inferSelect;
+export type NewReadingPlanDay = typeof reading_plan_days.$inferInsert;
+export type UserReadingProgress = typeof user_reading_progress.$inferSelect;
+export type NewUserReadingProgress = typeof user_reading_progress.$inferInsert;
+export type PrayerPair = typeof prayer_pairs.$inferSelect;
+export type NewPrayerPair = typeof prayer_pairs.$inferInsert;
 
 // Type for ReadingPlan with its days included
 export type ReadingPlanWithDays = ReadingPlan & { days: ReadingPlanDay[] };
 
-// Type for User with their account/subscription details included (Added in Step 3.2)
-// Uses the relation name defined in usersRelations
+// Type for User with their account/subscription details included
 export type UserWithSubscription = User & { account: Team | null };
+
+// Bible Content Types (Added)
+export type Book = typeof books.$inferSelect;
+export type NewBook = typeof books.$inferInsert;
+export type Chapter = typeof chapters.$inferSelect;
+export type NewChapter = typeof chapters.$inferInsert;
+export type Verse = typeof verses.$inferSelect;
+export type NewVerse = typeof verses.$inferInsert;
