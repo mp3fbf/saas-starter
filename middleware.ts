@@ -21,76 +21,82 @@
  * - Error handling is included for session verification failures, clearing the invalid cookie and redirecting if necessary.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
 import { verifyToken, signToken } from '@/lib/auth/jwt';
 
-const key = new TextEncoder().encode(process.env.AUTH_SECRET);
-const PUBLIC_PATHS = ['/sign-in', '/sign-up'];
+// Define paths that don't require authentication
+const PUBLIC_PATHS = [
+  '/sign-in', 
+  '/sign-up', 
+  '/reset-password',
+  '/test', // Allow access to our test route
+  '/_next',
+  '/favicon.ico',
+  '/api/webhook', // Allow webhook endpoints
+];
 
 // Define the path prefix for routes that require authentication.
-const protectedRoutes = '/app'; // Changed from '/dashboard'
+const AUTH_PREFIX = ['/dashboard', '/account', '/app'];
 
 /**
  * @description Middleware function executed for matching requests.
  * @param {NextRequest} request - The incoming request object.
  * @returns {Promise<NextResponse>} The response object, potentially modified with redirects or updated cookies.
  */
-export async function middleware(request: NextRequest): Promise<NextResponse> {
-  const { pathname } = request.nextUrl;
-  const sessionCookie = request.cookies.get('session');
-
-  // Check if the requested route is protected
-  const isProtectedRoute = pathname.startsWith(protectedRoutes);
-
-  // 1. Route Protection: Redirect unauthenticated users from protected routes
-  if (isProtectedRoute && !sessionCookie) {
-    // User is trying to access a protected route without a session cookie.
-    // Redirect them to the sign-in page.
-    const signInUrl = new URL('/sign-in', request.url);
-    // Optional: Add a redirect query parameter if needed for post-login redirection
-    // signInUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(signInUrl);
-  }
-
-  // Initialize the response to continue the request chain by default
+export async function middleware(request: NextRequest) {
+  // Default to allowing the request (pass-through)
   let res = NextResponse.next();
-
-  // 2. Session Refresh: Update the session cookie expiry for authenticated users
-  if (sessionCookie) {
-    try {
-      // Verify the session token using the function from jwt.ts
-      const session = await verifyToken(sessionCookie.value);
-
-      if (!session || !session.expires || new Date(session.expires) < new Date()) {
-        // Invalid or expired session, redirect to sign-in
-        request.cookies.delete('session');
-        res = NextResponse.redirect(new URL('/sign-in', request.url));
-        res.cookies.delete('session');
-        return res;
-      }
-
-      // Refresh the session cookie if it's valid
-      const refreshedToken = await signToken(session);
-      res.cookies.set('session', refreshedToken, {
-        expires: new Date(session.expires),
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-      });
-    } catch (error) {
-      // Handle cases where the token is invalid or expired
-      console.error('Middleware: Error verifying or refreshing session:', error);
-      // Delete the invalid session cookie from the outgoing response
-      res.cookies.delete('session');
-      // If the user was trying to access a protected route with an invalid cookie, redirect them
-      if (isProtectedRoute) {
-        return NextResponse.redirect(new URL('/sign-in', request.url));
-      }
-    }
+  
+  // Check if the route requires authentication
+  const requiresAuth = AUTH_PREFIX.some(prefix => 
+    request.nextUrl.pathname.startsWith(prefix)
+  );
+  
+  // Public paths are always allowed
+  const isPublicPath = PUBLIC_PATHS.some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  );
+  
+  if (!requiresAuth || isPublicPath) {
+    return res; // Allow access without authentication
   }
-
-  // Return the response (either the default NextResponse.next() or one with modifications)
-  return res;
+  
+  // Check for the session cookie
+  const sessionCookie = request.cookies.get('session');
+  
+  if (!sessionCookie || !sessionCookie.value) {
+    // No session cookie found - redirect to sign-in
+    return NextResponse.redirect(new URL('/sign-in', request.url));
+  }
+  
+  try {
+    // Verify the session token using the function from jwt.ts
+    const session = await verifyToken(sessionCookie.value);
+    
+    if (!session || !session.expires || new Date(session.expires) < new Date()) {
+      // Invalid or expired session, redirect to sign-in
+      request.cookies.delete('session');
+      res = NextResponse.redirect(new URL('/sign-in', request.url));
+      res.cookies.delete('session');
+      return res;
+    }
+    
+    // Session is valid, refresh token
+    const refreshedToken = await signToken(session);
+    res.cookies.set('session', refreshedToken, {
+      expires: new Date(session.expires),
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
+    
+    return res;
+  } catch (error) {
+    // Error verifying session - clear cookie and redirect
+    console.error('Session verification failed:', error);
+    res = NextResponse.redirect(new URL('/sign-in', request.url));
+    res.cookies.delete('session');
+    return res;
+  }
 }
 
 // Configure the middleware matcher

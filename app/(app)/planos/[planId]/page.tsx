@@ -16,24 +16,20 @@
  *   will be implemented in later steps.
  */
 import React from 'react';
+import { Metadata } from 'next';
 
-// Remove the explicit interface
-// interface PlanoDetailPageProps {
-//   params: { planId: string };
-// }
+type Props = {
+  params: { planId: string };
+  searchParams: { [key: string]: string | string[] | undefined };
+};
 
-// Indicate that this is a Server Component.
-// Revert to inferred props type
-export default function PlanoDetailPage({ params }: { params: { planId: string }}) {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-semibold mb-4">
-        Detalhe do Plano: {params.planId}
-      </h1>
-      <p className="text-muted-foreground">
-        (O conteúdo diário para o plano {params.planId} será exibido aqui.)
-      </p>
-      {/* The <ReadingPlanViewer /> client component will be rendered here later */}
-    </div>
-  );
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  return {
+    title: `Plano de Leitura: ${params.planId}`,
+  };
+}
+
+export default async function PlanoDetailPage({ params }: Props) {
+  // Using async function to comply with server component expectations
+  return <div>Plan ID: {params.planId}</div>;
 }
