@@ -67,9 +67,6 @@ import {
   validatedActionWithUser,
 } from '@/lib/auth/middleware';
 
-// Enforce Node.js runtime for this file
-export const runtime = 'nodejs';
-
 /**
  * @description Logs an activity for a given user and team.
  * @param teamId - The ID of the team (user's account record) associated with the activity. Can be null/undefined if no team context.
