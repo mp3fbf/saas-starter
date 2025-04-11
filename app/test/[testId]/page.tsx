@@ -1,19 +1,22 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 
 /**
  * Test page to verify if the PageProps constraint issue affects all dynamic routes
  */
-type Props = {
-  params: { testId: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+type TestIdParams = {
+  testId: string;
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: TestIdParams 
+}): Promise<Metadata> {
   return {
     title: `Test: ${params.testId}`,
   };
 }
 
-export default async function TestPage({ params }: Props) {
+export default function Page({ params }: { params: { testId: string } }) {
   return <div>Test ID: {params.testId}</div>;
 } 

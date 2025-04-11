@@ -16,20 +16,24 @@
  *   will be implemented in later steps.
  */
 import React from 'react';
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 
-type Props = {
-  params: { planId: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+type PlanIdParams = {
+  planId: string;
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: PlanIdParams 
+}): Promise<Metadata> {
   return {
     title: `Plano de Leitura: ${params.planId}`,
   };
 }
 
-export default async function PlanoDetailPage({ params }: Props) {
-  // Using async function to comply with server component expectations
+// Using the exact pattern from Next.js App Router docs for dynamic route segments
+// https://nextjs.org/docs/app/api-reference/file-conventions/page
+export default function Page({ params }: { params: { planId: string } }) {
   return <div>Plan ID: {params.planId}</div>;
 }
