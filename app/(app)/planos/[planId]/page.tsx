@@ -17,13 +17,14 @@
  */
 import React from 'react';
 
+// Define props interface
+interface PlanoDetailPageProps {
+  params: { planId: string };
+}
+
 // Indicate that this is a Server Component.
 // It will become an async function later to fetch plan details based on planId.
-export default function PlanoDetailPage({
-  params,
-}: {
-  params: { planId: string };
-}) {
+export default function PlanoDetailPage({ params }: PlanoDetailPageProps) {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-semibold mb-4">

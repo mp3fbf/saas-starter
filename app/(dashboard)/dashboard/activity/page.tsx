@@ -10,21 +10,40 @@ import {
   Mail,
   CheckCircle,
   type LucideIcon,
+  BookOpen,
+  PlayCircle,
+  Share2,
+  Heart,
+  ListChecks,
+  Bell,
+  SunMoon,
 } from 'lucide-react';
 import { ActivityType } from '@/lib/db/schema';
 import { getActivityLogs } from '@/lib/db/queries';
 
 const iconMap: Record<ActivityType, LucideIcon> = {
-  [ActivityType.SIGN_UP]: UserPlus,
-  [ActivityType.SIGN_IN]: UserCog,
-  [ActivityType.SIGN_OUT]: LogOut,
-  [ActivityType.UPDATE_PASSWORD]: Lock,
-  [ActivityType.DELETE_ACCOUNT]: UserMinus,
-  [ActivityType.UPDATE_ACCOUNT]: Settings,
-  [ActivityType.CREATE_TEAM]: UserPlus,
-  [ActivityType.REMOVE_TEAM_MEMBER]: UserMinus,
-  [ActivityType.INVITE_TEAM_MEMBER]: Mail,
-  [ActivityType.ACCEPT_INVITATION]: CheckCircle,
+  'SIGN_UP': UserPlus,
+  'SIGN_IN': UserCog,
+  'SIGN_OUT': LogOut,
+  'UPDATE_PASSWORD': Lock,
+  'DELETE_ACCOUNT': UserMinus,
+  'UPDATE_ACCOUNT': Settings,
+  'CREATE_TEAM': UserPlus,
+  'REMOVE_TEAM_MEMBER': UserMinus,
+  'INVITE_TEAM_MEMBER': Mail,
+  'ACCEPT_INVITATION': CheckCircle,
+  'VIEW_DAILY_CONTENT': BookOpen,
+  'PLAY_AUDIO': PlayCircle,
+  'SHARE_CONTENT': Share2,
+  'ADD_PRAYER': Heart,
+  'DELETE_PRAYER': Heart,
+  'START_READING_PLAN': ListChecks,
+  'COMPLETE_READING_DAY': ListChecks,
+  'COMPLETE_READING_PLAN': ListChecks,
+  'REQUEST_PRAYER_PAIR': UserPlus,
+  'MARK_PRAYER_DONE': CheckCircle,
+  'ENABLE_NOTIFICATIONS': Bell,
+  'CHANGE_THEME': SunMoon,
 };
 
 function getRelativeTime(date: Date) {
@@ -43,28 +62,52 @@ function getRelativeTime(date: Date) {
 
 function formatAction(action: ActivityType): string {
   switch (action) {
-    case ActivityType.SIGN_UP:
+    case 'SIGN_UP':
       return 'You signed up';
-    case ActivityType.SIGN_IN:
+    case 'SIGN_IN':
       return 'You signed in';
-    case ActivityType.SIGN_OUT:
+    case 'SIGN_OUT':
       return 'You signed out';
-    case ActivityType.UPDATE_PASSWORD:
+    case 'UPDATE_PASSWORD':
       return 'You changed your password';
-    case ActivityType.DELETE_ACCOUNT:
+    case 'DELETE_ACCOUNT':
       return 'You deleted your account';
-    case ActivityType.UPDATE_ACCOUNT:
-      return 'You updated your account';
-    case ActivityType.CREATE_TEAM:
-      return 'You created a new team';
-    case ActivityType.REMOVE_TEAM_MEMBER:
-      return 'You removed a team member';
-    case ActivityType.INVITE_TEAM_MEMBER:
-      return 'You invited a team member';
-    case ActivityType.ACCEPT_INVITATION:
-      return 'You accepted an invitation';
+    case 'UPDATE_ACCOUNT':
+      return 'You updated your account settings';
+    case 'CREATE_TEAM':
+      return 'Account created';
+    case 'REMOVE_TEAM_MEMBER':
+      return 'Team member removed';
+    case 'INVITE_TEAM_MEMBER':
+      return 'Team member invited';
+    case 'ACCEPT_INVITATION':
+      return 'Invitation accepted';
+    case 'VIEW_DAILY_CONTENT':
+      return 'Viewed daily content';
+    case 'PLAY_AUDIO':
+      return 'Played audio reflection';
+    case 'SHARE_CONTENT':
+      return 'Shared daily content';
+    case 'ADD_PRAYER':
+      return 'Added a prayer request';
+    case 'DELETE_PRAYER':
+      return 'Deleted a prayer request';
+    case 'START_READING_PLAN':
+      return 'Started a reading plan';
+    case 'COMPLETE_READING_DAY':
+      return 'Completed a reading day';
+    case 'COMPLETE_READING_PLAN':
+      return 'Completed a reading plan';
+    case 'REQUEST_PRAYER_PAIR':
+      return 'Requested a prayer pair';
+    case 'MARK_PRAYER_DONE':
+      return 'Marked prayer as done';
+    case 'ENABLE_NOTIFICATIONS':
+      return 'Updated notification settings';
+    case 'CHANGE_THEME':
+      return 'Changed application theme';
     default:
-      return 'Unknown action occurred';
+      return `Performed action: ${action}`;
   }
 }
 
@@ -85,9 +128,7 @@ export default async function ActivityPage() {
             <ul className="space-y-4">
               {logs.map((log) => {
                 const Icon = iconMap[log.action as ActivityType] || Settings;
-                const formattedAction = formatAction(
-                  log.action as ActivityType
-                );
+                const formattedAction = formatAction(log.action as ActivityType);
 
                 return (
                   <li key={log.id} className="flex items-center space-x-4">
