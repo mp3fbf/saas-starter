@@ -17,62 +17,34 @@
  * - @/lib/db/drizzle (db): Drizzle database instance.
  * - @/lib/db/schema: Database table definitions and types.
  * - next/headers (cookies): For accessing session cookies.
- * - @/lib/auth/session (verifyToken): For verifying the JWT session token.
+ * - @/lib/auth/jwt (verifyToken, getSession): For verifying the JWT session token and getting session data.
  *
  * @notes
  * - `getUserWithSubscription` is the primary function for fetching user context including subscription status.
  * - The `teams` table is used to store individual user account/subscription data.
  */
-import { desc, and, eq, isNull } from 'drizzle-orm';
+import { desc, and, eq, isNull, count } from 'drizzle-orm';
 import { db } from './drizzle';
 import { activityLogs, teamMembers, teams, users, User, Team, TeamDataWithMembers } from './schema'; // Import User, Team, and TeamDataWithMembers types
 import { cookies } from 'next/headers';
-import { verifyToken } from '@/lib/auth/session';
+import { verifyToken, getSession } from '@/lib/auth/jwt'; // Updated import
 import { UserWithSubscription } from './schema'; // Import the new type
 
 /**
  * @description Retrieves the currently authenticated user based on the session cookie.
- * Verifies the session token and fetches the user data if valid and not deleted.
- * @returns {Promise<User | null>} The authenticated user object or null if not authenticated.
+ * Uses the `verifyToken` function (now from jwt.ts) to validate the session.
+ * Returns the user data if authenticated, otherwise null.
  */
 export async function getUser(): Promise<User | null> {
-  const sessionCookie = (await cookies()).get('session');
-  if (!sessionCookie || !sessionCookie.value) {
-    return null;
-  }
-
-  try {
-    const sessionData = await verifyToken(sessionCookie.value);
-    if (
-      !sessionData ||
-      !sessionData.user ||
-      typeof sessionData.user.id !== 'number'
-    ) {
-      return null;
+    // Use getSession from jwt.ts directly
+    const session = await getSession();
+    if (!session?.user?.id) {
+        return null;
     }
-
-    // Check session expiry (although middleware also handles this)
-    if (new Date(sessionData.expires) < new Date()) {
-      return null;
-    }
-
-    const userResult = await db
-      .select()
-      .from(users)
-      // Ensure user ID matches and the user is not soft-deleted
-      .where(and(eq(users.id, sessionData.user.id), isNull(users.deletedAt)))
-      .limit(1);
-
-    if (userResult.length === 0) {
-      return null; // User not found or deleted
-    }
-
-    return userResult[0];
-  } catch (error) {
-    // Handle token verification errors (e.g., invalid signature, expired)
-    console.error('Session verification failed:', error);
-    return null;
-  }
+    const user = await db.query.users.findFirst({
+        where: eq(users.id, session.user.id),
+    });
+    return user || null;
 }
 
 /**

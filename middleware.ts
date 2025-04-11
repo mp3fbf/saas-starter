@@ -13,16 +13,19 @@
  *
  * @dependencies
  * - next/server (NextResponse, NextRequest): For handling requests and responses in middleware.
- * - @/lib/auth/session (signToken, verifyToken): Functions for JWT signing and verification.
+ * - @/lib/auth/jwt (verifyToken, signToken): Functions for JWT signing and verification.
  *
  * @notes
  * - The `protectedRoutes` constant defines the path prefix requiring authentication.
  * - The `config.matcher` ensures this middleware runs for all routes except specific static assets and API routes.
  * - Error handling is included for session verification failures, clearing the invalid cookie and redirecting if necessary.
  */
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { signToken, verifyToken } from '@/lib/auth/session';
+import { NextRequest, NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
+import { verifyToken, signToken } from '@/lib/auth/jwt';
+
+const key = new TextEncoder().encode(process.env.AUTH_SECRET);
+const PUBLIC_PATHS = ['/sign-in', '/sign-up'];
 
 // Define the path prefix for routes that require authentication.
 const protectedRoutes = '/app'; // Changed from '/dashboard'
@@ -55,24 +58,24 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   // 2. Session Refresh: Update the session cookie expiry for authenticated users
   if (sessionCookie) {
     try {
-      // Verify the existing session token
-      const parsed = await verifyToken(sessionCookie.value);
+      // Verify the session token using the function from jwt.ts
+      const session = await verifyToken(sessionCookie.value);
 
-      // If verification is successful, issue a new token with refreshed expiry
-      const expiresInOneDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      if (!session || !session.expires || new Date(session.expires) < new Date()) {
+        // Invalid or expired session, redirect to sign-in
+        request.cookies.delete('session');
+        res = NextResponse.redirect(new URL('/sign-in', request.url));
+        res.cookies.delete('session');
+        return res;
+      }
 
-      // Set the new session cookie in the response
-      res.cookies.set({
-        name: 'session',
-        value: await signToken({
-          ...parsed, // Keep existing payload data
-          expires: expiresInOneDay.toISOString(), // Update expiry
-        }),
+      // Refresh the session cookie if it's valid
+      const refreshedToken = await signToken(session);
+      res.cookies.set('session', refreshedToken, {
+        expires: new Date(session.expires),
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        expires: expiresInOneDay,
-        path: '/', // Ensure cookie applies to all paths
       });
     } catch (error) {
       // Handle cases where the token is invalid or expired
