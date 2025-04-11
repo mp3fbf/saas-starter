@@ -1576,14 +1576,14 @@ Okay, planning the implementation steps for "Palavra Viva".
     -   **Step Dependencies**: Step 2.2, Step 2.1
     -   **User Instructions**: None
 
--   [ ] Step 3.2: Create `getUserWithSubscription` Query
+-   [x] Step 3.2: Create `getUserWithSubscription` Query
     -   **Task**: Implement a query function to fetch the authenticated user along with their subscription details from the associated `teams` record and their trial end date.
     -   **Files**:
         -   `lib/db/queries.ts`: Create `getUserWithSubscription` function. It should first call `getUser` (or replicate its session checking logic). If a user is found, query the `teams` table `WHERE user_id = user.id` and join/include the user data (specifically `users.trial_end_date`). Return an object containing the user data and the associated team/subscription data, or null if no user/team found.
     -   **Step Dependencies**: Step 2.2, Step 2.1
     -   **User Instructions**: None
 
--   [ ] Step 3.3: Update `UserProvider` and `useUser` Hook
+-   [x] Step 3.3: Update `UserProvider` and `useUser` Hook
     -   **Task**: Modify the `UserProvider` to fetch user data using `getUserWithSubscription`, calculate the `isPremium` status, and provide the user, subscription details, and `isPremium` flag via the `useUser` hook.
     -   **Files**:
         -   `lib/auth/index.tsx`: Update `UserProvider` to use `getUserWithSubscription` for `userPromise`. Define a new context type `UserContextType` that includes `user: User | null`, `team: Team | null`, `isPremium: boolean`, and `setUser`. Calculate `isPremium` inside the provider based on `team.subscriptionStatus` ('active', 'trialing') and `user.trial_end_date`. Update the value passed to `UserContext.Provider`. Update `useUser` hook to return this new context type.
@@ -1591,7 +1591,7 @@ Okay, planning the implementation steps for "Palavra Viva".
     -   **Step Dependencies**: Step 3.2
     -   **User Instructions**: None
 
--   [ ] Step 3.4: Update Middleware Protected Routes
+-   [x] Step 3.4: Update Middleware Protected Routes
     -   **Task**: Change the middleware to protect the core application routes (`/app/*`) instead of the dashboard routes (`/dashboard/*`).
     -   **Files**:
         -   `middleware.ts`: Change the `protectedRoutes` variable or the logic within the middleware function to match `/app` instead of `/dashboard`. Ensure redirects point to `/sign-in`.
@@ -1600,28 +1600,28 @@ Okay, planning the implementation steps for "Palavra Viva".
 
 ## Phase 4: Core Application Structure & Layout
 
--   [ ] Step 4.1: Create Core App Route Group & Placeholder Page
+-   [x] Step 4.1: Create Core App Route Group & Placeholder Page
     -   **Task**: Set up the main authenticated route group `(app)` and create a placeholder homepage.
     -   **Files**:
         -   `app/(app)/page.tsx`: Create a simple Server Component displaying "Palavra Viva - Home". Mark with `"use server";`.
     -   **Step Dependencies**: Step 3.4
     -   **User Instructions**: None
 
--   [ ] Step 4.2: Create Core App Layout
+-   [x] Step 4.2: Create Core App Layout
     -   **Task**: Create the layout file for the `(app)` route group.
     -   **Files**:
         -   `app/(app)/layout.tsx`: Create a Server Component layout that wraps `{children}`. Include basic structure (e.g., `<main>`). Mark with `"use server";`.
     -   **Step Dependencies**: Step 4.1
     -   **User Instructions**: None
 
--   [ ] Step 4.3: Implement Bottom Navigation Component
+-   [x] Step 4.3: Implement Bottom Navigation Component
     -   **Task**: Create a client component for bottom navigation suitable for mobile PWA feel.
     -   **Files**:
         -   `app/(app)/_components/bottom-navigation.tsx`: Create a Client Component (`"use client";`). Use `Link` from `next/link` and `usePathname` hook. Include links (with icons from `lucide-react`) for "Início" (`/app`), "Planos" (`/app/planos`), "Orações" (`/app/oracoes`), "Orar Dupla" (`/app/orar-dupla`), "Ajustes" (`/dashboard`). Style it fixed to the bottom for mobile views (e.g., using Tailwind classes `fixed bottom-0 left-0 right-0 lg:hidden`). Highlight the active link based on `pathname`.
     -   **Step Dependencies**: Step 4.1
     -   **User Instructions**: None
 
--   [ ] Step 4.4: Integrate Bottom Navigation into Layout
+-   [x] Step 4.4: Integrate Bottom Navigation into Layout
     -   **Task**: Add the `BottomNavigation` component to the core app layout.
     -   **Files**:
         -   `app/(app)/layout.tsx`: Import and render the `BottomNavigation` component within the layout structure (likely after the main content area). Adjust padding on the main content area if needed to avoid overlap with the fixed bottom nav.

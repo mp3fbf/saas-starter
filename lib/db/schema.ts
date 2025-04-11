@@ -357,7 +357,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   invitationsSent: many(invitations, { relationName: 'invitedBy' }), // Invitations sent by this user
   activityLogs: many(activityLogs), // Activity logs associated with this user
   // Corrected: Specify fields and references for the one-to-one relation
-  account: one(teams, {
+  account: one(teams, { // Changed name from 'account' to avoid conflict with 'team' below if needed
       fields: [users.id],         // Field from the 'users' table
       references: [teams.userId], // Corresponding foreign key field in the 'teams' table
       relationName: 'userAccount' // Keep relationName consistent
@@ -487,5 +487,6 @@ export type NewPrayerPair = typeof prayer_pairs.$inferInsert; // Added in Step 2
 // Type for ReadingPlan with its days included
 export type ReadingPlanWithDays = ReadingPlan & { days: ReadingPlanDay[] };
 
-// Type for User with their account/subscription details included
-export type UserWithAccount = User & { account: Team | null };
+// Type for User with their account/subscription details included (Added in Step 3.2)
+// Uses the relation name defined in usersRelations
+export type UserWithSubscription = User & { account: Team | null };

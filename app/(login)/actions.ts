@@ -54,7 +54,8 @@ import type {
   NewTeamMember,
   NewActivityLog,
   Team,
-  ActivityType, // Keep ActivityType as a type import
+  ActivityType,
+  activityTypeEnum,
 } from '@/lib/db/schema';
 import { comparePasswords, hashPassword, setSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
@@ -84,14 +85,14 @@ async function logActivity(
     console.warn(`Activity logging skipped: No teamId provided for userId ${userId}, type ${type}`);
     return;
   }
-  const newActivity: NewActivityLog = {
+  const newLog: NewActivityLog = {
     teamId,
     userId,
-    action: type, // Use the enum value directly
+    action: type,
     ipAddress: ipAddress || '',
   };
   try {
-    await db.insert(activityLogs).values(newActivity);
+    await db.insert(activityLogs).values(newLog);
   } catch (error) {
     console.error("Failed to log activity:", error);
   }
