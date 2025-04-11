@@ -20,18 +20,10 @@
         ]
       }
     ],
-    "functions": {
-      "app/api/**/*.ts": {
-        "runtime": "nodejs18"
-      },
-      "app/(login)/actions.ts": {
-        "runtime": "nodejs18"
-      }
-    },
     "crons": [
       {
         "path": "/api/cron/daily-content",
         "schedule": "0 0 * * *"
       }
     ]
-  }
+}
