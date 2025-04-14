@@ -10,7 +10,7 @@
  *   intended for use by frontend components.
  *
  * @dependencies
- * - drizzle-orm (eq, and): For database querying.
+ * - drizzle-orm (eq, sql): For database querying.
  * - @/lib/db/drizzle (db): Drizzle database instance.
  * - @/lib/db/schema (daily_content, DailyContent, NewDailyContent): DB table schema and types.
  * - ./openai (getVerseSuggestion, generateReflection): OpenAI API helper functions.
@@ -38,7 +38,11 @@ import { getVerseText } from './bible';
  * @returns {string} The formatted date string.
  */
 function formatDateForDB(date: Date): string {
-  return date.toISOString().split('T')[0];
+  // Ensure the date is treated as UTC to avoid timezone issues when getting parts
+  const year = date.getUTCFullYear();
+  const month = (date.getUTCMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed
+  const day = date.getUTCDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -169,30 +173,40 @@ export async function generateDailyContent(
 
 /**
  * @description Retrieves the daily devotional content for a specific date from the database.
- * @param {Date} date - The date for which to retrieve content.
+ * This function is intended to be called from Server Components or other server-side logic.
+ *
+ * @param {Date} date - The date for which to retrieve content. The time part is ignored.
  * @returns {Promise<DailyContent | null>} The daily content object if found, otherwise null.
  */
 export async function getDailyContent(
   date: Date,
 ): Promise<DailyContent | null> {
+  // Format the date to 'YYYY-MM-DD' to match the database DATE type
   const formattedDate = formatDateForDB(date);
-  try {
-    const result = await db
-      .select()
-      .from(daily_content)
-      .where(eq(daily_content.contentDate, formattedDate))
-      .limit(1);
+  console.log(`[DEBUG] getDailyContent: Querying for date ${formattedDate}`); // Debug log
 
+  try {
+    // Query the database for content matching the formatted date
+    const result = await db
+      .select() // Select all columns from the table
+      .from(daily_content) // Specify the table to query
+      .where(eq(daily_content.contentDate, formattedDate)) // Filter by the formatted date
+      .limit(1); // Expect only one entry per date
+
+    // Check if any content was found
     if (result.length > 0) {
-      return result[0];
+      console.log(`[DEBUG] getDailyContent: Found content for date ${formattedDate}`); // Debug log
+      return result[0]; // Return the first (and only) result
     } else {
+      console.log(`[DEBUG] getDailyContent: No content found for date ${formattedDate}`); // Debug log
       return null; // No content found for this date
     }
   } catch (error) {
+    // Log any errors during the database query
     console.error(
       `Database error fetching content for date ${formattedDate}:`,
       error,
     );
-    return null; // Return null on database error
+    return null; // Return null to indicate failure
   }
 }

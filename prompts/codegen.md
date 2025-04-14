@@ -1662,7 +1662,7 @@ Okay, planning the implementation steps for "Palavra Viva".
     -   **Step Dependencies**: Step 5.1, Step 5.2, Step 2.5
     -   **User Instructions**: Define appropriate voice IDs for free/premium tiers in `lib/content/elevenlabs.ts` or `.env`. Ensure OpenAI prompt engineering aligns with the spec's requirements.
 
--   [ ] Step 5.4: Implement Cron Job Trigger
+-   [x] Step 5.4: Implement Cron Job Trigger
     -   **Task**: Create the API route endpoint triggered by Vercel Cron and configure the schedule.
     -   **Files**:
         -   `app/api/cron/generate-daily-content/route.ts`: Create POST route handler. Check `Authorization` header against `process.env.CRON_SECRET`. If valid, call `generateDailyContent(tomorrow)`. Return success/error response.
