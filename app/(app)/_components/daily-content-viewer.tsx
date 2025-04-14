@@ -6,25 +6,23 @@
  * Key features:
  * - Displays the date, verse reference, verse text, and reflection.
  * - Integrates the `AudioPlayer` component for audio playback.
- * - Includes a placeholder share button.
+ * - Integrates the `ShareableImageGenerator` component for sharing content as an image.
  * - Uses Shadcn UI components (`Card`, `Button`) for styling.
  *
  * @dependencies
  * - react: Core React library.
  * - @/lib/db/schema (DailyContent): Type definition for the content object.
  * - @/components/ui/card: Shadcn Card components for layout.
- * - @/components/ui/button: Shadcn Button component.
  * - ./audio-player (AudioPlayer): Component for audio playback.
- * - lucide-react (Share2): Icon for the share button.
+ * - ./shareable-image-generator (ShareableImageGenerator): Component for generating and sharing images.
  *
  * @props
  * - content: The `DailyContent` object containing verse, reflection, and audio URLs.
  * - isPremium: Boolean indicating if the current user has premium access.
  *
  * @notes
- * - Marked with `"use client"` as it interacts with the `AudioPlayer` client component
- *   and will later integrate with the client-side share functionality.
- * - The share functionality is currently a placeholder button.
+ * - Marked with `"use client"` as it interacts with client components like `AudioPlayer`
+ *   and `ShareableImageGenerator`.
  * - Date formatting is basic; consider using a library like `date-fns` for localization if needed.
  */
 'use client';
@@ -39,9 +37,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+// Button is no longer directly needed here unless for other purposes
+// import { Button } from '@/components/ui/button';
 import AudioPlayer from './audio-player'; // Import the AudioPlayer component
-import { Share2 } from 'lucide-react'; // Import Share icon
+import { ShareableImageGenerator } from './shareable-image-generator'; // Import the ShareableImageGenerator component
 
 // Define the props interface for the component
 interface DailyContentViewerProps {
@@ -64,14 +63,6 @@ export default function DailyContentViewer({
     day: 'numeric',
     timeZone: 'UTC', // Display the date based on UTC
   });
-
-  // Placeholder function for the share action
-  const handleShare = () => {
-    // TODO: Implement share functionality (Step 8.1/8.2)
-    // This might trigger the ShareableImageGenerator component/modal
-    console.log('Share button clicked');
-    alert('Funcionalidade de compartilhar será implementada em breve!');
-  };
 
   return (
     <Card className="w-full max-w-2xl mx-auto my-4 shadow-lg border border-border rounded-xl overflow-hidden">
@@ -115,11 +106,12 @@ export default function DailyContentViewer({
           isPremium={isPremium}
         />
 
-        {/* Share Button Placeholder */}
-        <Button variant="outline" onClick={handleShare}>
-          <Share2 className="mr-2 h-4 w-4" />
-          Compartilhar
-        </Button>
+        {/* Shareable Image Generator Component */}
+        <ShareableImageGenerator
+          verseRef={content.verseRef}
+          verseText={content.verseText}
+          reflectionText={content.reflectionText}
+        />
       </CardFooter>
     </Card>
   );
