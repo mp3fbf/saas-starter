@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Call /api/cron/daily-content endpoint
         run: |
-          curl -X POST https://palavraviva-e8cft4ojf-robertoscunha-gmailcoms-projects.vercel.app/api/cron/generate-daily-content -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+          curl -X POST https://palavraviva-e8cft4ojf-robertoscunha-gmailcoms-projects.vercel.app/api/cron/generate-daily-content -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" -H "x-vercel-protection-bypass: $VERCEL_BYPASS_SECRET"
