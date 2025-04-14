@@ -89,8 +89,15 @@ export async function getVerseText(verseRef: string): Promise<string | null> {
     return null; // Parsing failed
   }
 
-  const { bookAbbrev, chapterNum, verseNum } = parsedRef;
+  let { bookAbbrev, chapterNum, verseNum } = parsedRef;
   const bibleVersion = 'nvi'; // Hardcoded version based on the imported data
+
+  // Handle common Portuguese book name variations if needed
+  if (bookAbbrev === 'joão') {
+    bookAbbrev = 'jo'; // Use standard abbreviation for query
+    console.log(`[DEBUG] getVerseText: Mapping 'joão' to standard abbreviation 'jo'`);
+  }
+  // Add more mappings here if needed (e.g., 'atos' -> 'at', etc.)
 
   // DEBUG LOG: Log parsed values before querying DB
   console.log(
