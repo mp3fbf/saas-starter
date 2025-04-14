@@ -14,7 +14,7 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           VERCEL_BYPASS_SECRET: ${{ secrets.VERCEL_BYPASS_SECRET }}
         run: |
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST https://palavraviva-e8cft4ojf-robertoscunha-gmailcoms-projects.vercel.app/api/cron/generate-daily-content \
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST https://palavraviva-git-main-robertoscunha-gmailcoms-projects.vercel.app/api/cron/generate-daily-content \
             -H "Authorization: Bearer $CRON_SECRET" \
             -H "x-vercel-protection-bypass: $VERCEL_BYPASS_SECRET")
           BODY=$(echo "$RESPONSE" | head -n -1)
