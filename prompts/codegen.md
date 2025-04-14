@@ -1670,7 +1670,7 @@ Okay, planning the implementation steps for "Palavra Viva".
     -   **Step Dependencies**: Step 5.3, Step 1.2
     -   **User Instructions**: Deploy the project to Vercel for the cron job to function. Configure the Cron Secret in Vercel environment variables.
 
--   [ ] Step 5.5: Implement `getDailyContent` Query/Action
+-   [x] Step 5.5: Implement `getDailyContent` Query/Action
     -   **Task**: Create the function to fetch daily content for the frontend.
     -   **Files**:
         -   `lib/content/actions.ts`: Add `async function getDailyContent(date: Date): Promise<DailyContent | null>` (can be a simple query function or a server action). Query the `daily_content` table for the given date.
