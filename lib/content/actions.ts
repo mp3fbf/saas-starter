@@ -84,10 +84,27 @@ export async function generateDailyContent(
     console.log(`[${generationTime}] Suggested verse: ${verseRef}`);
 
     // 3. Get Verse Text from Database
-    const verseText = await getVerseText(verseRef);
+    let verseText: string | null = null;
+    try {
+      verseText = await getVerseText(verseRef);
+    } catch (verseError) {
+      // Log error if getVerseText itself throws an exception
+      console.error(
+        `[${generationTime}] Error calling getVerseText for reference ${verseRef}:`,
+        verseError,
+      );
+      // Proceed with verseText as null, will be caught below
+    }
+
     if (!verseText) {
-      // Attempting to parse might fail if the suggestion format is unexpected
-      throw new Error(`Failed to get verse text for reference: ${verseRef}`);
+      // Handle case where getVerseText returns null/empty or threw an error above
+      const errorMsg = `[${generationTime}] Failed to get verse text for reference: ${verseRef}. Skipping generation for date ${formattedDate}.`;
+      console.error(errorMsg);
+      return {
+        success: false,
+        message: `Failed to get verse text for reference: ${verseRef}`,
+        date: formattedDate,
+      };
     }
     console.log(`[${generationTime}] Retrieved verse text for ${verseRef}.`);
 
