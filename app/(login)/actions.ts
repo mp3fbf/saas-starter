@@ -75,7 +75,7 @@ import {
  * @param type - The type of activity being logged (using the ActivityType enum).
  * @param ipAddress - Optional IP address of the user.
  */
-async function logActivity(
+export async function logActivity(
   teamId: number | null | undefined,
   userId: number,
   type: ActivityType,

@@ -1,29 +1,34 @@
 /**
  * @description
- * Placeholder page component for the Personal Prayers section (`/app/oracoes`).
- * This page will eventually display the user's prayer list, managed via local storage.
- * For the initial setup (Step 4.5), it only renders a title.
+ * Page component for the Personal Prayers section (`/app/oracoes`).
+ * This page displays the user's prayer list, managed via local storage
+ * by the `PrayerList` client component.
  *
  * @dependencies
  * - React: Core React library.
+ * - @/app/(app)/_components/prayer-list (PrayerList): The client component that handles prayer management.
  *
  * @notes
  * - Marked as a Server Component (`"use server";`).
- * - The client component responsible for managing and displaying prayers (`PrayerList`)
- *   will be added here in a later step.
+ * - It simply renders the `PrayerList` component, which contains all the
+ *   client-side logic for interacting with localStorage and managing prayers.
  */
 import React from 'react';
+import PrayerList from '@/app/(app)/_components/prayer-list'; // Import the client component
 
 // Indicate that this is a Server Component.
-// It will likely render a Client Component later.
+// It renders the PrayerList client component which handles interaction.
+'use server';
+
 export default function OracoesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-semibold mb-4">Orações Pessoais</h1>
-      <p className="text-muted-foreground">
-        (Seu espaço para registrar pedidos e agradecimentos será exibido aqui.)
-      </p>
-      {/* The <PrayerList /> client component will be rendered here later */}
+      {/*
+        The PrayerList component is a client component responsible for
+        handling the display, addition, and deletion of prayers using
+        localStorage. This server page just needs to render it.
+      */}
+      <PrayerList />
     </div>
   );
 }

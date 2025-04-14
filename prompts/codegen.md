@@ -1700,14 +1700,14 @@ Okay, planning the implementation steps for "Palavra Viva".
 
 ## Phase 6: Personal Prayers Feature Implementation
 
--   [ ] Step 6.1: Implement `PrayerList` Component
+-   [x] Step 6.1: Implement `PrayerList` Component
     -   **Task**: Create the client component for managing personal prayers using local storage.
     -   **Files**:
         -   `app/(app)/_components/prayer-list.tsx`: Create client component (`"use client";`). Use `useState` for `prayers` array. Use `useEffect` to load/save prayers from/to `localStorage` (`JSON.stringify`/`parse`). Implement functions `addPrayer(text)` and `deletePrayer(id)`. Render an `Input` and "Add" `Button` for adding prayers. Render the list of prayers (e.g., using `Card`), each with a delete `Button`.
     -   **Step Dependencies**: None
     -   **User Instructions**: None
 
--   [ ] Step 6.2: Implement Personal Prayers Page
+-   [x] Step 6.2: Implement Personal Prayers Page
     -   **Task**: Create the page to display the `PrayerList` component.
     -   **Files**:
         -   `app/(app)/oracoes/page.tsx`: Modify the placeholder page. Render the `PrayerList` component. Add a title like "Meus Pedidos e Agradecimentos". Can remain a Server Component simply rendering the Client Component.
@@ -1716,21 +1716,21 @@ Okay, planning the implementation steps for "Palavra Viva".
 
 ## Phase 7: Reading Plans Feature Implementation
 
--   [ ] Step 7.1: Seed Reading Plan Data
+-   [x] Step 7.1: Seed Reading Plan Data
     -   **Task**: Add logic to the seed script to populate initial reading plan data.
     -   **Files**:
         -   `lib/db/seed.ts`: Add code to insert 2-3 sample plans into `reading_plans` and their corresponding daily readings into `reading_plan_days`. Define plan details (title, description, duration) and daily verses (ref + text).
     -   **Step Dependencies**: Step 2.6, Step 2.7
     -   **User Instructions**: Run `pnpm db:seed` (or follow instructions if seeding is separate). Ensure Bible verse text is included directly in `reading_plan_days` or fetched during seeding if `verse_text` isn't directly stored.
 
--   [ ] Step 7.2: Implement Reading Plan Server Actions/Queries
+-   [x] Step 7.2: Implement Reading Plan Server Actions/Queries
     -   **Task**: Create backend functions for fetching plan data and managing user progress.
     -   **Files**:
         -   `lib/reading-plans/actions.ts`: Create file. Implement `getAllReadingPlans()` (query `reading_plans`). Implement `getReadingPlanDetails(planId)` (query `reading_plans` join `reading_plan_days`). Implement `getUserProgress(userId)` (query `user_reading_progress`). Implement `updateReadingProgress(userId, planId, dayNumber)` server action (use `validatedActionWithUser`, upsert `user_reading_progress`, update `current_day`, set `completed_at` if last day).
     -   **Step Dependencies**: Step 2.6, Step 2.7, Step 2.8
     -   **User Instructions**: None
 
--   [ ] Step 7.3: Create Reading Plan Frontend Components
+-   [x] Step 7.3: Create Reading Plan Frontend Components
     -   **Task**: Create the necessary client components for displaying reading plans and progress.
     -   **Files**:
         -   `app/(app)/_components/reading-plan-card.tsx`: Client component (`"use client";`) to display a single plan summary (title, duration, theme). Props: `{ plan: ReadingPlan }`. Use Shadcn `Card`.
@@ -1740,14 +1740,14 @@ Okay, planning the implementation steps for "Palavra Viva".
     -   **Step Dependencies**: Step 7.2 (Types)
     -   **User Instructions**: None
 
--   [ ] Step 7.4: Implement Reading Plan List Page
+-   [x] Step 7.4: Implement Reading Plan List Page
     -   **Task**: Create the page to display the list of available reading plans.
     -   **Files**:
         -   `app/(app)/planos/page.tsx`: Modify placeholder. Make it an `async function Page()`. Fetch all plans using `getAllReadingPlans`. Fetch user progress using `getUserProgress`. Pass data to `ReadingPlanList` component. Use Suspense for loading states.
     -   **Step Dependencies**: Step 7.2, Step 7.3
     -   **User Instructions**: None
 
--   [ ] Step 7.5: Implement Reading Plan Detail Page
+-   [x] Step 7.5: Implement Reading Plan Detail Page
     -   **Task**: Create the page to display the details and daily content of a specific reading plan.
     -   **Files**:
         -   `app/(app)/planos/[planId]/page.tsx`: Modify placeholder. Make it an `async function Page({ params })`. Get `planId` from `params`. Fetch plan details using `getReadingPlanDetails(planId)`. Fetch user progress for this specific plan. Pass data to `ReadingPlanViewer`. Handle invalid `planId` (e.g., `notFound()`). Use Suspense for loading states.
