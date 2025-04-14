@@ -92,6 +92,11 @@ export async function getVerseText(verseRef: string): Promise<string | null> {
   const { bookAbbrev, chapterNum, verseNum } = parsedRef;
   const bibleVersion = 'nvi'; // Hardcoded version based on the imported data
 
+  // DEBUG LOG: Log parsed values before querying DB
+  console.log(
+    `[DEBUG] getVerseText: Parsed ref '${verseRef}' to: book=${bookAbbrev}, ch=${chapterNum}, v=${verseNum}, version=${bibleVersion}`,
+  );
+
   try {
     // Query using joins to find the specific verse text
     const result = await db
