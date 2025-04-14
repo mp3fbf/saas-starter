@@ -1,0 +1,14 @@
+name: Daily Content Cron
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # every day at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  call-daily-content-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call /api/cron/daily-content endpoint
+        run: |
+          curl -X POST https://<YOUR_DEPLOYED_URL>/api/cron/daily-content -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

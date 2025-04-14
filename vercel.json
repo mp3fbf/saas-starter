@@ -20,10 +20,5 @@
         ]
       }
     ],
-    "crons": [
-      {
-        "path": "/api/cron/daily-content",
-        "schedule": "0 0 * * *"
-      }
-    ]
+
 }
