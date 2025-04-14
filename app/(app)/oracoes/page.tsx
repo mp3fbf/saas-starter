@@ -1,5 +1,3 @@
-'use server';
-
 /**
  * @description
  * Page component for the Personal Prayers section (`/app/oracoes`).
@@ -11,7 +9,6 @@
  * - @/app/(app)/_components/prayer-list (PrayerList): The client component that handles prayer management.
  *
  * @notes
- * - Marked as a Server Component (`"use server";`).
  * - It simply renders the `PrayerList` component, which contains all the
  *   client-side logic for interacting with localStorage and managing prayers.
  */
