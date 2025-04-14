@@ -1691,7 +1691,7 @@ Okay, planning the implementation steps for "Palavra Viva".
     -   **Step Dependencies**: Step 5.6, Step 2.5 (Types)
     -   **User Instructions**: None
 
--   [ ] Step 5.8: Implement Daily Content Homepage
+-   [x] Step 5.8: Implement Daily Content Homepage
     -   **Task**: Implement the main homepage to fetch and display the daily content.
     -   **Files**:
         -   `app/(app)/page.tsx`: Modify the placeholder page. Make it an `async function Page()` server component. Fetch user subscription status (`isPremium`) using `getUserWithSubscription` or `useUser` context setup. Fetch daily content using `getDailyContent(new Date())`. Use the Suspense helper pattern: wrap an async data-loading component call in `<Suspense>`. Pass fetched content and `isPremium` to `DailyContentViewer`. Handle loading/error states (e.g., "Conteúdo não disponível").

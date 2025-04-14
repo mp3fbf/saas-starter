@@ -54,51 +54,79 @@ export default function AudioPlayer({
   // Ref to hold the HTMLAudioElement instance
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // DEBUGGING: Log received props
+  console.log('[DEBUG] AudioPlayer props received:', {
+    audioUrlFree,
+    audioUrlPremium,
+    isPremium,
+  });
+
   // Determine the correct audio URL based on premium status
   const audioUrl = isPremium ? audioUrlPremium : audioUrlFree;
+  
+  // DEBUGGING: Log final selected URL
+  console.log('[DEBUG] AudioPlayer final URL selected:', audioUrl);
 
   // Effect to initialize and clean up the Audio object when the URL changes
   useEffect(() => {
     // Clear previous error state when URL changes
     setError(null);
 
+    // DEBUGGING: Log effect trigger
+    console.log('[DEBUG] AudioPlayer useEffect triggered with URL:', audioUrl);
+
     // Only proceed if a valid audio URL is provided
     if (audioUrl) {
+      // DEBUGGING: Log URL structure before creating Audio object
+      console.log('[DEBUG] Creating Audio object with URL:', {
+        originalUrl: audioUrl,
+      });
+
       // Create a new Audio object
       audioRef.current = new Audio(audioUrl);
 
       // Event listener for when the audio finishes playing
       audioRef.current.onended = () => {
+        console.log('[DEBUG] Audio playback ended naturally');
         setIsPlaying(false); // Reset playing state
       };
 
       // Event listener for audio errors
       audioRef.current.onerror = (e) => {
-        console.error('Audio playback error:', e);
+        console.error('[DEBUG] Audio playback error details:', {
+          errorEvent: e,
+          errorCode: audioRef.current?.error?.code,
+          errorMessage: audioRef.current?.error?.message,
+          networkState: audioRef.current?.networkState,
+          readyState: audioRef.current?.readyState,
+          audioURL: audioUrl,
+        });
         setError('Erro ao carregar o áudio.'); // Set error message
         setIsPlaying(false); // Reset playing state
-        // Prevent default error handling if necessary
-        // Depending on the error type, you might want more specific messages
-        // For instance, checking event.target.error.code
       };
 
-      // Optional: Listener for when audio can start playing
-      // audioRef.current.oncanplaythrough = () => {
-      //   console.log("Audio can play through.");
-      // };
-
-      // Optional: Listener for loading state
-      // audioRef.current.onloadstart = () => {
-      //   console.log("Audio loading started...");
-      // };
+      // Add more debug listeners
+      audioRef.current.onloadstart = () => {
+        console.log('[DEBUG] Audio loading started');
+      };
+      
+      audioRef.current.oncanplay = () => {
+        console.log('[DEBUG] Audio can start playing');
+      };
+      
+      audioRef.current.onwaiting = () => {
+        console.log('[DEBUG] Audio is waiting for more data');
+      };
 
     } else {
       // If no audioUrl, ensure the ref is null
+      console.log('[DEBUG] No audio URL provided, setting ref to null');
       audioRef.current = null;
     }
 
     // Cleanup function: Pause audio and release the object when the component unmounts or URL changes
     return () => {
+      console.log('[DEBUG] Cleaning up audio object');
       audioRef.current?.pause(); // Pause playback if active
       audioRef.current = null; // Release the audio object reference
     };
@@ -106,14 +134,23 @@ export default function AudioPlayer({
 
   // Handler for the play/pause button click
   const handlePlayPause = () => {
+    console.log('[DEBUG] Play/Pause button clicked, current state:', {
+      isPlaying,
+      hasAudioRef: !!audioRef.current,
+      hasError: !!error,
+      currentTime: audioRef.current?.currentTime,
+    });
+    
     if (!audioRef.current || error) return; // Do nothing if no audio element or if there's an error
 
     if (isPlaying) {
+      console.log('[DEBUG] Pausing audio');
       audioRef.current.pause(); // Pause playback
     } else {
+      console.log('[DEBUG] Attempting to play audio');
       // Attempt to play, potentially catching errors
       audioRef.current.play().catch((playError) => {
-        console.error('Error attempting to play audio:', playError);
+        console.error('[DEBUG] Error attempting to play audio:', playError);
         setError('Não foi possível iniciar a reprodução.');
         setIsPlaying(false); // Ensure state reflects failure
       });
@@ -124,6 +161,11 @@ export default function AudioPlayer({
 
   // Render disabled button if no URL or if an error occurred
   if (!audioUrl || error) {
+    console.log('[DEBUG] Rendering disabled button due to:', {
+      noUrl: !audioUrl, 
+      error: error
+    });
+    
     return (
       <Button disabled variant="ghost" className="flex items-center text-muted-foreground">
         {/* Display appropriate icon and text */}

@@ -1,78 +1,121 @@
 /**
+ * @module lib/content/elevenlabs
+ * @description
+ * Interacts with the ElevenLabs Text-to-Speech API to generate audio
+ * from text and uploads the result to a Supabase Storage bucket.
+ *
+ * @dependencies
+ * - node-fetch (or built-in fetch): For making HTTP requests to the API.
+ * - @supabase/supabase-js: For uploading audio to Supabase Storage.
+ * - crypto: For generating unique file names.
+ *
+ * @requires Environment Variables:
+ * - `ELEVENLABS_API_KEY`: Your ElevenLabs API key.
+ * - `ELEVENLABS_VOICE_ID_FREE`: (Optional) Voice ID for the free tier.
+ * - `ELEVENLABS_VOICE_ID_PREMIUM`: (Optional) Voice ID for the premium tier.
+ * - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL.
+ * - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anonymous key.
+ *
+ * @notes
+ * - Ensure the Supabase bucket ('audio-content') exists and has appropriate
+ *   public read (SELECT) policies configured for `anon` and `authenticated` roles.
+ */
+
+import { randomUUID } from 'crypto';
+import { supabase } from '../supabase/client'; // Ensure this path is correct
+
+/**
  * @description
  * This module initializes and configures the client logic for interacting with the
  * ElevenLabs Text-to-Speech (TTS) API within the Palavra Viva application.
- * It provides a helper function to generate audio from text using specified voice IDs.
+ * It provides a helper function to generate audio from text using specified voice IDs
+ * and uploads the resulting audio to Supabase Storage.
  *
  * Key features:
  * - Retrieves the ElevenLabs API key from environment variables.
  * - Retrieves voice IDs for free and premium tiers from environment variables.
- * - Provides a function `generateAudio` to request TTS generation.
- * - Includes basic error handling for API key configuration.
+ * - Provides a function `generateAudio` to request TTS generation and store the audio.
+ * - Includes basic error handling for API key configuration and upload process.
  *
  * @dependencies
  * - node-fetch (or built-in fetch): For making HTTP requests to the API.
+ * - @supabase/supabase-js: For uploading audio to Supabase Storage.
+ * - crypto: For generating unique file names.
  *
  * @notes
  * - Ensure `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID_FREE`, and
  *   `ELEVENLABS_VOICE_ID_PREMIUM` environment variables are set in your `.env` file.
- * - The `generateAudio` function currently returns a mock URL/buffer and needs
- *   to be implemented with the actual API call logic (e.g., in Step 5.3).
- * - Consider adding more robust error handling (e.g., rate limits, API errors),
- *   retry logic, and potentially storing/streaming the audio buffer instead of just a URL.
+ * - Ensure the Supabase bucket ('audio-content') exists and has appropriate public read policies.
+ * - Consider adding more robust error handling (e.g., rate limits, API errors), retry logic.
  * - The API endpoint and request structure should be verified against the current
  *   ElevenLabs documentation.
  */
 
-// Retrieve API configuration from environment variables
+// --- Configuration ---
+
 const apiKey = process.env.ELEVENLABS_API_KEY;
-export const freeVoiceId = process.env.ELEVENLABS_VOICE_ID_FREE || 'default-free-voice-id'; // Provide default fallback
-export const premiumVoiceId = process.env.ELEVENLABS_VOICE_ID_PREMIUM || 'default-premium-voice-id'; // Provide default fallback
+const envFreeVoiceId = process.env.ELEVENLABS_VOICE_ID_FREE;
+const envPremiumVoiceId = process.env.ELEVENLABS_VOICE_ID_PREMIUM;
 
-// Base URL for the ElevenLabs API
+// Provide default fallbacks if environment variables are not set
+export const freeVoiceId = envFreeVoiceId || '21m00Tcm4TlvDq8ikWAM'; // Default free voice
+export const premiumVoiceId = envPremiumVoiceId || 'N2lVS1w4EtoT3dr4eOWO'; // Default premium voice
+
 const ELEVENLABS_API_BASE_URL = 'https://api.elevenlabs.io/v1';
+const SUPABASE_AUDIO_BUCKET = 'audio-content'; // Your bucket name
 
-// Check if the API key is configured
+// --- Initial Checks ---
+
 if (!apiKey) {
   console.error(
-    'ERROR: ElevenLabs API key is not configured. Please set ELEVENLABS_API_KEY in your environment variables.',
+    'ERROR: [ElevenLabs] API key is not configured. Please set ELEVENLABS_API_KEY in environment variables.',
   );
-  // Allow the app to potentially run but log the error. Calls will fail later.
 }
-if (freeVoiceId === 'default-free-voice-id') {
-    console.warn(
-      'WARN: ELEVENLABS_VOICE_ID_FREE not set, using default placeholder. Please configure in .env.'
-    );
+if (!envFreeVoiceId) {
+  console.warn(
+    'WARN: [ElevenLabs] ELEVENLABS_VOICE_ID_FREE not set in environment, using default fallback voice ID.',
+  );
 }
-if (premiumVoiceId === 'default-premium-voice-id') {
-    console.warn(
-      'WARN: ELEVENLABS_VOICE_ID_PREMIUM not set, using default placeholder. Please configure in .env.'
-    );
+if (!envPremiumVoiceId) {
+  console.warn(
+    'WARN: [ElevenLabs] ELEVENLABS_VOICE_ID_PREMIUM not set in environment, using default fallback voice ID.',
+  );
 }
 
+// --- Core Function ---
+
 /**
- * @description Generates audio from text using a specified ElevenLabs voice ID.
- * This function will send a request to the ElevenLabs TTS API.
+ * @description Generates audio from text using a specified ElevenLabs voice ID,
+ * uploads it to Supabase Storage, and returns the public URL.
  *
  * @param {string} text - The text content to convert to speech.
  * @param {string} voiceId - The ID of the ElevenLabs voice to use.
- * @returns {Promise<string | null>} A promise that resolves to the URL of the generated audio file
- *                                  or null if generation failed. (Note: Actual API might return buffer or stream).
+ * @returns {Promise<string | null>} A promise that resolves to the public URL of the
+ *                                  generated and stored audio file, or null if generation
+ *                                  or upload failed.
  */
 export async function generateAudio(
   text: string,
   voiceId: string,
 ): Promise<string | null> {
+  // Debug: Log function entry with params
+  console.log('[DEBUG][ElevenLabs] generateAudio called with:', { 
+    textLength: text?.length,
+    voiceId,
+    hasApiKey: !!apiKey
+  });
+
   if (!apiKey) {
-    console.error('ElevenLabs API key not available for generateAudio.');
+    console.error('[ElevenLabs] API key not available for generateAudio call.');
     return null;
   }
+  
   if (!text || !voiceId) {
-    console.error('Missing text or voiceId for generateAudio.');
+    console.error('[ElevenLabs] Missing text or voiceId for generateAudio call.');
     return null;
   }
 
-  console.log(`Placeholder: Calling ElevenLabs to generate audio for voice ${voiceId}...`);
+  console.log(`[ElevenLabs] Requesting audio generation for voice ${voiceId}...`);
   const apiUrl = `${ELEVENLABS_API_BASE_URL}/text-to-speech/${voiceId}`;
   const requestBody = {
     text: text,
@@ -83,49 +126,84 @@ export async function generateAudio(
     },
   };
 
-  // --- Placeholder Implementation ---
-  // TODO: Implement the actual fetch call to the ElevenLabs API.
-  // Handle the response, which might be an audio stream or require polling.
-  // For simplicity in MVP, we might assume it returns a direct URL or handle streaming later.
-  /*
   try {
+    // Step 1: Call ElevenLabs API
+    console.log('[DEBUG][ElevenLabs] Sending request to API:', { 
+      apiUrl,
+      textLength: text.length
+    });
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'xi-api-key': apiKey,
+        Accept: 'audio/mpeg', // Specify expected response type
       },
       body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error(`ElevenLabs API Error (${response.status}): ${errorBody}`);
+      console.error(`[ElevenLabs] API Error (${response.status}): ${errorBody}`);
       return null;
     }
 
-    // --- Handling the Response ---
-    // The response might be the audio stream directly.
-    // You might need to save this stream to a file storage (like S3 or Vercel Blob)
-    // and return the URL to that stored file.
-    // Or, if the API provides a direct URL (less common for TTS generation), return that.
+    // Step 2: Get audio data as a Blob
+    const audioBlob = await response.blob();
+    if (!audioBlob || audioBlob.size === 0) {
+      console.error('[ElevenLabs] Received empty audio blob from API.');
+      return null;
+    }
+    console.log(`[ElevenLabs] Received audio blob, size: ${audioBlob.size} bytes.`);
 
-    // Example: Assuming response is audio blob/stream
-    // const audioBlob = await response.blob();
-    // const storageUrl = await uploadAudioToStorage(audioBlob); // Need to implement upload function
-    // return storageUrl;
+    // Step 3: Upload Blob to Supabase Storage
+    const fileName = `${voiceId}-${randomUUID()}.mp3`;
+    console.log(`[DEBUG][Supabase] Uploading to bucket '${SUPABASE_AUDIO_BUCKET}' as '${fileName}'...`);
 
-    // Placeholder: Return a mock URL
-    return `https://example.com/mock-audio-${voiceId}-${Date.now()}.mp3`;
+    const { error: uploadError, data: uploadData } = await supabase.storage
+      .from(SUPABASE_AUDIO_BUCKET)
+      .upload(fileName, audioBlob, {
+        contentType: 'audio/mpeg',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('[Supabase] Error uploading audio to Storage:', uploadError);
+      return null;
+    }
+
+    // Debug: Log upload success
+    console.log('[DEBUG][Supabase] Upload successful:', uploadData);
+
+    // Step 4: Get Public URL for the uploaded file
+    console.log(`[Supabase] Retrieving public URL for '${fileName}'...`);
+    const { data: urlData } = supabase.storage
+      .from(SUPABASE_AUDIO_BUCKET)
+      .getPublicUrl(fileName);
+
+    if (!urlData || !urlData.publicUrl) {
+      console.error('[Supabase] Could not get public URL for uploaded audio.');
+      return null;
+    }
+
+    // Debug: Log the full public URL details for debugging
+    console.log('[DEBUG][Supabase] Public URL details:', {
+      url: urlData.publicUrl,
+      bucket: SUPABASE_AUDIO_BUCKET,
+      fileName: fileName,
+      urlStructure: {
+        isRelative: urlData.publicUrl.startsWith('/'),
+        isAbsolute: urlData.publicUrl.startsWith('http'),
+        urlLength: urlData.publicUrl.length
+      }
+    });
+
+    console.log('[Supabase] Successfully uploaded audio. Public URL:', urlData.publicUrl);
+    return urlData.publicUrl;
 
   } catch (error) {
-    console.error('Error calling ElevenLabs API:', error);
+    console.error('[ElevenLabs/Supabase] Unexpected error during audio generation or upload:', error);
     return null;
   }
-  */
-  // --- End Placeholder ---
-
-  // For now, return a hardcoded mock URL
-  await new Promise((resolve) => setTimeout(resolve, 100)); // Simulate async call
-  return `/mock-audio-${voiceId}-${Date.now()}.mp3`; // Example mock URL
 }
