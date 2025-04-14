@@ -22,7 +22,7 @@
  */
 
 import { randomUUID } from 'crypto';
-import { supabase } from '../supabase/client'; // Ensure this path is correct
+import { createClient } from '@supabase/supabase-js'; // For server-side operations
 
 /**
  * @description
@@ -63,6 +63,20 @@ export const premiumVoiceId = envPremiumVoiceId || 'N2lVS1w4EtoT3dr4eOWO'; // De
 
 const ELEVENLABS_API_BASE_URL = 'https://api.elevenlabs.io/v1';
 const SUPABASE_AUDIO_BUCKET = 'audio-content'; // Your bucket name
+
+// Create a server-side Supabase client with service role permissions
+// for operations that need to bypass RLS (like uploading files)
+const getServiceClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('[Supabase] Missing URL or service role key for server operations');
+    return null;
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey);
+};
 
 // --- Initial Checks ---
 
@@ -157,11 +171,18 @@ export async function generateAudio(
     }
     console.log(`[ElevenLabs] Received audio blob, size: ${audioBlob.size} bytes.`);
 
-    // Step 3: Upload Blob to Supabase Storage
+    // Step 3: Get the service client for upload (to bypass RLS)
+    const serviceClient = getServiceClient();
+    if (!serviceClient) {
+      console.error('[Supabase] Could not create service client for upload.');
+      return null;
+    }
+    
+    // Step 4: Upload Blob to Supabase Storage using service role client
     const fileName = `${voiceId}-${randomUUID()}.mp3`;
     console.log(`[DEBUG][Supabase] Uploading to bucket '${SUPABASE_AUDIO_BUCKET}' as '${fileName}'...`);
 
-    const { error: uploadError, data: uploadData } = await supabase.storage
+    const { error: uploadError, data: uploadData } = await serviceClient.storage
       .from(SUPABASE_AUDIO_BUCKET)
       .upload(fileName, audioBlob, {
         contentType: 'audio/mpeg',
@@ -176,9 +197,9 @@ export async function generateAudio(
     // Debug: Log upload success
     console.log('[DEBUG][Supabase] Upload successful:', uploadData);
 
-    // Step 4: Get Public URL for the uploaded file
+    // Step 5: Get Public URL for the uploaded file
     console.log(`[Supabase] Retrieving public URL for '${fileName}'...`);
-    const { data: urlData } = supabase.storage
+    const { data: urlData } = serviceClient.storage
       .from(SUPABASE_AUDIO_BUCKET)
       .getPublicUrl(fileName);
 
