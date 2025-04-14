@@ -1677,14 +1677,14 @@ Okay, planning the implementation steps for "Palavra Viva".
     -   **Step Dependencies**: Step 2.5
     -   **User Instructions**: None
 
--   [ ] Step 5.6: Create `AudioPlayer` Component
+-   [x] Step 5.6: Create `AudioPlayer` Component
     -   **Task**: Implement the client component for playing audio.
     -   **Files**:
         -   `app/(app)/_components/audio-player.tsx`: Create client component (`"use client";`). Accept `audioUrlFree`, `audioUrlPremium`, `isPremium` props. Use `useState` for `isPlaying`. Use `useRef` for `HTMLAudioElement`. Select correct URL based on `isPremium`. Render Play/Pause button (Shadcn `Button`, `lucide-react` icons). Implement play/pause logic and handle audio `ended` event. Handle cases where URLs are null.
     -   **Step Dependencies**: Step 3.3
     -   **User Instructions**: None
 
--   [ ] Step 5.7: Create `DailyContentViewer` Component
+-   [x] Step 5.7: Create `DailyContentViewer` Component
     -   **Task**: Implement the client component to display the daily content.
     -   **Files**:
         -   `app/(app)/_components/daily-content-viewer.tsx`: Create client component (`"use client";`). Accept `content: DailyContent` and `isPremium: boolean` props. Display date, verse reference, verse text, reflection text using Shadcn `Card` components. Integrate the `AudioPlayer` component, passing appropriate props. Add a placeholder button for "Compartilhar".

@@ -1,157 +1,107 @@
 /**
  * @description
- * This is the main marketing/landing page for the Palavra Viva application.
- * It is displayed at the root path ('/').
- * This content was moved from the original `app/(dashboard)/page.tsx` to resolve
- * routing conflicts with the new `app/(app)/page.tsx`.
+ * This is the main homepage for the authenticated Palavra Viva application (`/app`).
+ * It serves as the entry point for users after logging in, displaying the
+ * daily devotional content.
+ *
+ * Key features:
+ * - Fetches the current user's subscription status server-side.
+ * - Fetches the daily devotional content (verse, reflection, audio URLs) for the current date.
+ * - Uses React Suspense to handle loading states while fetching data.
+ * - Renders the `DailyContentViewer` component to display the content.
+ * - Handles cases where content might not be available for the day.
  *
  * @dependencies
- * - @/components/ui/button: Button component from Shadcn/ui.
- * - lucide-react: For icons (ArrowRight, CreditCard, Database).
- * - ./terminal: The animated terminal component, now moved to the root app directory.
+ * - react (Suspense): For handling asynchronous data loading states.
+ * - @/lib/db/queries (getUserWithSubscription): Function to fetch user and subscription data.
+ * - @/lib/content/actions (getDailyContent): Function to fetch daily content data.
+ * - @/lib/auth/helpers (isUserPremium): Helper to determine premium status.
+ * - ./_components/daily-content-viewer (DailyContentViewer): Client component to display content.
+ * - @/components/ui/loading-spinner (LoadingSpinner): Component shown during data fetching.
+ * - @/lib/db/schema (DailyContent): Type definition for daily content.
  *
  * @notes
- * - This page is publicly accessible (not protected by authentication middleware).
+ * - This page is a Server Component (`async function Page`).
+ * - The `DailyContentLoader` async component pattern is used within Suspense
+ *   to resolve the data promise and handle potential errors gracefully.
+ * - Uses `new Date()` to fetch content for the current day.
  */
-'use server'; // Mark as a Server Component
-
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, CreditCard, Database } from 'lucide-react';
-import { Terminal } from '@/app/terminal'; // Use @ alias
+import React, { Suspense } from 'react';
+import { getUserWithSubscription } from '@/lib/db/queries'; // Function to get user and subscription
+import { getDailyContent } from '@/lib/content/actions'; // Function to get daily content
+import { isUserPremium } from '@/lib/auth/helpers'; // Helper to check premium status
+import DailyContentViewer from './_components/daily-content-viewer'; // Client component for display
+import LoadingSpinner from '@/components/ui/loading-spinner'; // Loading indicator
+import { DailyContent } from '@/lib/db/schema'; // Type for daily content
 
 /**
- * @description Renders the main marketing/landing page content.
- * @returns The homepage component.
+ * @description
+ * An asynchronous helper component designed to be used within a <Suspense> boundary.
+ * It awaits the `contentPromise` and renders the `DailyContentViewer` with the resolved
+ * content and premium status, or an error message if content is unavailable.
+ *
+ * @param {object} props - Component props.
+ * @param {Promise<DailyContent | null>} props.contentPromise - Promise resolving to the daily content.
+ * @param {boolean} props.isPremium - User's premium status.
+ * @returns {JSX.Element} Either the DailyContentViewer or an error message.
  */
-export default async function MarketingHomePage() {
-  // No async operations needed here currently, but returning JSX implicitly works
-  // within the Server Component model. Could be marked async if data fetching were added.
+async function DailyContentLoader({
+  contentPromise,
+  isPremium,
+}: {
+  contentPromise: Promise<DailyContent | null>;
+  isPremium: boolean;
+}) {
+  // Await the promise to get the content data
+  const content = await contentPromise;
+
+  // Check if content was successfully fetched
+  if (!content) {
+    // Render a user-friendly message if no content is available
+    return (
+      <div className="text-center py-10 text-muted-foreground">
+        <p>Conteúdo de hoje ainda não disponível.</p>
+        <p>Por favor, tente novamente mais tarde.</p>
+      </div>
+    );
+  }
+
+  // Render the viewer component with the fetched content and premium status
+  return <DailyContentViewer content={content} isPremium={isPremium} />;
+}
+
+/**
+ * @description
+ * The main server component for the application's homepage (`/app`).
+ * Fetches necessary data and orchestrates the rendering of the daily content.
+ */
+export default async function HomePage() {
+  // Fetch the authenticated user along with their subscription details
+  const userWithSub = await getUserWithSubscription();
+  // Determine if the user is premium based on their subscription/trial status
+  const premiumStatus = isUserPremium(userWithSub);
+
+  // Get the current date to fetch today's content
+  const today = new Date();
+  // Initiate the fetch for today's daily content. This returns a promise.
+  const dailyContentPromise = getDailyContent(today);
+
   return (
-    <main>
-      {/* Hero Section */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:grid lg:grid-cols-12 lg:gap-8">
-            <div className="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
-              {/* Updated Headline and Description for Palavra Viva */}
-              <h1 className="text-4xl font-bold text-gray-900 tracking-tight sm:text-5xl md:text-6xl">
-                Seu Devocional Diário
-                <span className="block text-primary">Palavra Viva</span>
-              </h1>
-              <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl">
-                Comece seu dia inspirado com versículos, reflexões e áudio. Uma
-                experiência devocional simples e edificante para o seu
-                cotidiano.
-              </p>
-              {/* Updated Call to Action */}
-              <div className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
-                <Button
-                  asChild // Use asChild to make the Button act as a Link wrapper
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-lg px-8 py-4 inline-flex items-center justify-center"
-                >
-                  <a href="/sign-up">
-                    Começar Agora
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </a>
-                </Button>
-              </div>
-            </div>
-            {/* Terminal Component (Kept from template for visual effect, can be replaced) */}
-            <div className="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
-              <Terminal />
-            </div>
-          </div>
-        </div>
-      </section>
+    <div className="container mx-auto px-4 py-8">
+      {/* Title for the page */}
+      {/* <h1 className="text-3xl font-bold text-center mb-6 text-primary">
+        Devocional Diário
+      </h1> */}
 
-      {/* Features Section */}
-      <section className="py-16 bg-white w-full">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:grid lg:grid-cols-3 lg:gap-8">
-            {/* Feature 1: Daily Content */}
-            <div>
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-primary text-primary-foreground">
-                {/* Replace with a relevant icon e.g., BookOpen */}
-                <svg viewBox="0 0 24 24" className="h-6 w-6 fill-current">
-                  <path d="M19 2H5C3.9 2 3 2.9 3 4V20C3 21.1 3.9 22 5 22H19C20.1 22 21 21.1 21 20V4C21 2.9 20.1 2 19 2ZM9 4H12V12L10.5 11.25L9 12V4ZM19 20H5V4H7V14L10.5 12.75L14 14V4H19V20Z" />
-                </svg>
-              </div>
-              <div className="mt-5">
-                <h2 className="text-lg font-medium text-gray-900">
-                  Devocional Diário
-                </h2>
-                <p className="mt-2 text-base text-gray-500">
-                  Receba um versículo e uma reflexão inspiradora todos os dias,
-                  com opção de ouvir em áudio.
-                </p>
-              </div>
-            </div>
-
-            {/* Feature 2: Reading Plans */}
-            <div className="mt-10 lg:mt-0">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-primary text-primary-foreground">
-                <Database className="h-6 w-6" />{' '}
-                {/* Keep or change icon */}
-              </div>
-              <div className="mt-5">
-                <h2 className="text-lg font-medium text-gray-900">
-                  Planos de Leitura
-                </h2>
-                <p className="mt-2 text-base text-gray-500">
-                  Siga planos de leitura bíblica temáticos (Fé, Perdão, etc.)
-                  para aprofundar seu estudo.
-                </p>
-              </div>
-            </div>
-
-            {/* Feature 3: Premium */}
-            <div className="mt-10 lg:mt-0">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-primary text-primary-foreground">
-                <CreditCard className="h-6 w-6" />{' '}
-                {/* Keep or change icon */}
-              </div>
-              <div className="mt-5">
-                <h2 className="text-lg font-medium text-gray-900">
-                  Plano Premium (com Teste)
-                </h2>
-                <p className="mt-2 text-base text-gray-500">
-                  Acesse áudios com voz realista, modo offline, temas e mais.
-                  Experimente grátis por 7 dias.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Final Call to Action Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:grid lg:grid-cols-2 lg:gap-8 lg:items-center">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-                Pronto para começar sua jornada?
-              </h2>
-              <p className="mt-3 max-w-3xl text-lg text-gray-500">
-                Junte-se à comunidade Palavra Viva e fortaleça sua fé
-                diariamente com conteúdo inspirador e interações edificantes.
-              </p>
-            </div>
-            <div className="mt-8 lg:mt-0 flex justify-center lg:justify-end">
-              <Button
-                asChild
-                className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full text-xl px-12 py-6 inline-flex items-center justify-center"
-              >
-                <a href="/sign-up">
-                  Criar Conta Gratuita
-                  <ArrowRight className="ml-3 h-6 w-6" />
-                </a>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
+      {/* Suspense boundary wraps the data-dependent component */}
+      {/* It shows the LoadingSpinner while the contentPromise is pending */}
+      <Suspense fallback={<LoadingSpinner className="mt-10" size="h-10 w-10" />}>
+        {/* The DailyContentLoader component handles awaiting the promise and rendering */}
+        <DailyContentLoader
+          contentPromise={dailyContentPromise}
+          isPremium={premiumStatus}
+        />
+      </Suspense>
+    </div>
   );
 }
