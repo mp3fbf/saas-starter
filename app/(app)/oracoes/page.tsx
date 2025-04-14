@@ -1,3 +1,5 @@
+'use server';
+
 /**
  * @description
  * Page component for the Personal Prayers section (`/app/oracoes`).
@@ -15,10 +17,6 @@
  */
 import React from 'react';
 import PrayerList from '@/app/(app)/_components/prayer-list'; // Import the client component
-
-// Indicate that this is a Server Component.
-// It renders the PrayerList client component which handles interaction.
-'use server';
 
 export default function OracoesPage() {
   return (
