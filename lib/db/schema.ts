@@ -31,6 +31,13 @@ import {
   unique,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
+import { PgTransaction } from 'drizzle-orm/pg-core'; // Import Transaction type if needed elsewhere
+import { PostgresJsQueryResultHKT } from 'drizzle-orm/postgres-js';
+import { ExtractTablesWithRelations } from 'drizzle-orm';
+
+// Define Transaction type alias if not directly exported or for clarity
+export type Transaction = PgTransaction<PostgresJsQueryResultHKT, typeof import('./schema'), ExtractTablesWithRelations<typeof import('./schema')>>;
+
 
 // --- Enums ---
 
@@ -557,3 +564,10 @@ export type Chapter = typeof chapters.$inferSelect;
 export type NewChapter = typeof chapters.$inferInsert;
 export type Verse = typeof verses.$inferSelect;
 export type NewVerse = typeof verses.$inferInsert;
+
+// Prayer Pairing Status Type (Added)
+export type PrayerPairStatus = {
+  status: 'not_started' | 'waiting' | 'paired';
+  notified: boolean; // Indicates if the user has an unread notification from their partner
+  pairDetails?: PrayerPair; // Optional: include pair details if status is 'paired'
+};

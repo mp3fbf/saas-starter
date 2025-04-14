@@ -1756,14 +1756,14 @@ Okay, planning the implementation steps for "Palavra Viva".
 
 ## Phase 8: Shareable Blessings Feature
 
--   [ ] Step 8.1: Implement `ShareableImageGenerator` Component
+-   [x] Step 8.1: Implement `ShareableImageGenerator` Component
     -   **Task**: Create the client component that generates and shares an image using Canvas and Web Share API.
     -   **Files**:
         -   `app/(app)/_components/shareable-image-generator.tsx`: Create client component (`"use client";`). Accept `verseText`, `reflectionText` props. Use `useRef` for `<canvas>`. Implement function `generateAndShare()`: draw background/text/branding on canvas, convert to blob (`toBlob`), use `navigator.share` with the blob converted to a `File`. Provide download fallback (`toDataURL`) if `navigator.share` is unavailable or fails.
     -   **Step Dependencies**: None
     -   **User Instructions**: Consider adding a simple app logo image to `public/` and loading it onto the canvas.
 
--   [ ] Step 8.2: Integrate Sharing into Daily Content Viewer
+-   [x] Step 8.2: Integrate Sharing into Daily Content Viewer
     -   **Task**: Add the share functionality to the daily content view.
     -   **Files**:
         -   `app/(app)/_components/daily-content-viewer.tsx`: Import `ShareableImageGenerator` (or its trigger function/modal logic). Replace the placeholder "Compartilhar" button with a real button. `onClick`, call the `generateAndShare` function from the generator component, passing the relevant text. Consider triggering a modal containing the generator if more options are needed.

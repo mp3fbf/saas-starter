@@ -2,15 +2,17 @@
  * @description
  * Client component responsible for displaying the daily devotional content.
  * Receives content data and premium status from a parent Server Component.
+ * Fetches the current theme using useUser to pass to the image generator.
  *
  * Key features:
  * - Displays the date, verse reference, verse text, and reflection.
  * - Integrates the `AudioPlayer` component for audio playback.
- * - Integrates the `ShareableImageGenerator` component for sharing content as an image.
- * - Uses Shadcn UI components (`Card`, `Button`) for styling.
+ * - Integrates the `ShareableImageGenerator` component, passing the current theme.
+ * - Uses Shadcn UI components (`Card`) for styling.
  *
  * @dependencies
  * - react: Core React library.
+ * - @/lib/auth (useUser): Hook to access user context (including theme).
  * - @/lib/db/schema (DailyContent): Type definition for the content object.
  * - @/components/ui/card: Shadcn Card components for layout.
  * - ./audio-player (AudioPlayer): Component for audio playback.
@@ -21,14 +23,14 @@
  * - isPremium: Boolean indicating if the current user has premium access.
  *
  * @notes
- * - Marked with `"use client"` as it interacts with client components like `AudioPlayer`
- *   and `ShareableImageGenerator`.
- * - Date formatting is basic; consider using a library like `date-fns` for localization if needed.
+ * - Marked with `"use client"` as it interacts with client components and uses hooks.
+ * - Date formatting is basic.
  */
 'use client';
 
 import React from 'react';
 import { DailyContent } from '@/lib/db/schema'; // Import the type for daily content
+import { useUser } from '@/lib/auth'; // Import useUser hook
 import {
   Card,
   CardContent,
@@ -37,8 +39,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-// Button is no longer directly needed here unless for other purposes
-// import { Button } from '@/components/ui/button';
 import AudioPlayer from './audio-player'; // Import the AudioPlayer component
 import { ShareableImageGenerator } from './shareable-image-generator'; // Import the ShareableImageGenerator component
 
@@ -52,9 +52,11 @@ export default function DailyContentViewer({
   content,
   isPremium,
 }: DailyContentViewerProps) {
+  // Get user context, including the theme preference
+  const { user } = useUser();
+  const currentTheme = user?.theme || 'light'; // Default to light theme if not available
+
   // Format the date for display (adjust locale and options as needed)
-  // Ensure date is parsed correctly, assuming YYYY-MM-DD format from DB
-  // Parse as UTC to avoid timezone shifts when only date is present
   const displayDate = new Date(
     content.contentDate + 'T00:00:00Z',
   ).toLocaleDateString('pt-BR', {
@@ -80,16 +82,11 @@ export default function DailyContentViewer({
       <CardContent className="space-y-4 pt-4 pb-4 px-6 bg-background">
         {/* Display the Bible verse text */}
         <blockquote className="text-center text-lg md:text-xl italic border-l-4 border-primary pl-4 py-2 bg-card rounded-r-md">
-          {/* Using dangerouslySetInnerHTML to render potential line breaks if needed,
-              otherwise, just use {content.verseText}. Be cautious if verseText
-              could ever contain untrusted content. For Bible text, it's generally safe. */}
           {content.verseText}
         </blockquote>
 
         {/* Display the reflection text */}
-        {/* Using prose for potential better text formatting if needed */}
         <div className="prose prose-base md:prose-lg max-w-none text-foreground text-justify leading-relaxed">
-          {/* Split reflection into paragraphs if it contains newline characters */}
           {content.reflectionText.split('\n').map((paragraph, index) => (
             <p key={index} className={index > 0 ? 'mt-4' : ''}>
               {paragraph}
@@ -106,11 +103,12 @@ export default function DailyContentViewer({
           isPremium={isPremium}
         />
 
-        {/* Shareable Image Generator Component */}
+        {/* Shareable Image Generator Component - Pass the current theme */}
         <ShareableImageGenerator
           verseRef={content.verseRef}
           verseText={content.verseText}
           reflectionText={content.reflectionText}
+          theme={currentTheme} // Pass the theme name
         />
       </CardFooter>
     </Card>
