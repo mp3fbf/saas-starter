@@ -133,18 +133,29 @@ export async function middleware(request: NextRequest) {
   }
 
   // 3. Handle route protection for unauthenticated users
-  if (!isAuthenticated && AUTH_ROUTES.some(route => pathname.startsWith(route))) {
-    console.log(`Middleware: Unauthenticated user accessing protected route ${pathname}. Redirecting to /sign-in.`);
-    
-    // Special handling to avoid redirect loops
-    if (pathname === '/') {
-      return NextResponse.redirect(new URL('/sign-in', request.url));
+
+  // First, check if the current path is explicitly public-only
+  const isPublicOnlyPath = PUBLIC_ONLY_ROUTES.some(route => pathname === route);
+
+  // If it's a public-only path, it doesn't need protection, skip this block
+  if (!isPublicOnlyPath) {
+    // Now, check if the path requires authentication
+    const isAuthRequiredPath = AUTH_ROUTES.some(route => {
+      if (route === '/') {
+        return pathname === route; // Exact match for root
+      }
+      return pathname.startsWith(route); // StartsWith for others like /dashboard
+    });
+
+    // If the user is unauthenticated AND the path requires auth
+    if (!isAuthenticated && isAuthRequiredPath) {
+      console.log(`Middleware: Unauthenticated user accessing protected route ${pathname}. Redirecting to /sign-in.`);
+
+      // Preserve the original destination path for redirect after login
+      const signInUrl = new URL('/sign-in', request.url);
+      signInUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(signInUrl);
     }
-    
-    // For other protected routes, preserve the original destination path
-    const signInUrl = new URL('/sign-in', request.url);
-    signInUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(signInUrl);
   }
 
   // 4. Allow the request if none of the above conditions triggered a redirect
