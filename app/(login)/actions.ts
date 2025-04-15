@@ -177,7 +177,13 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
     }
   }
 
-  redirect('/app'); // Redirect to core app page by default
+  // If user was redirected here with a specific path, go there
+  if (redirectTo && redirectTo !== '/sign-in' && redirectTo !== '/sign-up') {
+    redirect(redirectTo);
+  }
+
+  // Default redirect after successful sign-in
+  redirect('/');
 });
 
 // Schema for sign-up validation
