@@ -1786,7 +1786,7 @@ Okay, planning the implementation steps for "Palavra Viva".
     -   **Step Dependencies**: Step 9.1 (Types)
     -   **User Instructions**: None
 
--   [ ] Step 9.3: Implement Prayer Pairing Page
+-   [x] Step 9.3: Implement Prayer Pairing Page
     -   **Task**: Create the page for the prayer pairing feature.
     -   **Files**:
         -   `app/(app)/orar-dupla/page.tsx`: Modify placeholder. Make it an `async function Page()`. Fetch the user's initial prayer pair status using `getPrayerPairStatus`. Pass the status to the `PrayerPairingInterface` component. Add explanatory text.
