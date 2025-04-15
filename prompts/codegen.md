@@ -1772,14 +1772,14 @@ Okay, planning the implementation steps for "Palavra Viva".
 
 ## Phase 9: Prayer Pairing Feature
 
--   [ ] Step 9.1: Implement Prayer Pairing Server Actions
+-   [x] Step 9.1: Implement Prayer Pairing Server Actions
     -   **Task**: Create backend actions for managing prayer pairing requests and status.
     -   **Files**:
         -   `lib/prayers/actions.ts`: Create file. Implement `requestPrayerPair` (`validatedActionWithUser`): Check existing pairs, find partner (query `users` where `requested_pairing_at` is recent and not self, not already paired), create `prayer_pairs` record, update `users.requested_pairing_at`. Implement `markPrayerAsDone` (`validatedActionWithUser`): Find active pair, update `userX_last_prayed_at` and `userY_notified_at` in `prayer_pairs`. Implement `getPrayerPairStatus(userId)`: Query `prayer_pairs` and `users.requested_pairing_at`, check `notified_at` flags, return status object (e.g., `{ status: 'paired' | 'waiting' | 'not_started', notified: boolean }`). Reset `notified_at` flag in DB after fetching if returning notified status.
     -   **Step Dependencies**: Step 2.9, Step 2.1
     -   **User Instructions**: None
 
--   [ ] Step 9.2: Implement Prayer Pairing Interface Component
+-   [x] Step 9.2: Implement Prayer Pairing Interface Component
     -   **Task**: Create the frontend component for users to interact with the prayer pairing feature.
     -   **Files**:
         -   `app/(app)/_components/prayer-pairing-interface.tsx`: Create client component (`"use client";`). Props: `{ initialStatus: PrayerPairStatus }`. Use `useState` to manage current status, potentially refreshing periodically or after actions. Display messages based on status ("Você está orando por alguém", "Alguém está orando por você", "Buscando alguém para orar...", etc.). Show "Quero orar por alguém" button (calls `requestPrayerPair` action) or "Orei pela pessoa" button (calls `markPrayerAsDone` action) based on state. Use `useActionState` for feedback.
