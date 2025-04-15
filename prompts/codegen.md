@@ -1795,14 +1795,14 @@ Okay, planning the implementation steps for "Palavra Viva".
 
 ## Phase 10: Monetization & Premium Features
 
--   [ ] Step 10.1: Implement `isUserPremium` Utility
+-   [x] Step 10.1: Implement `isUserPremium` Utility
     -   **Task**: Create a helper function to determine if a user has premium access (active subscription or trial).
     -   **Files**:
         -   `lib/auth/helpers.ts` (or `lib/utils.ts`): Create file if it doesn't exist. Add function `isUserPremium(user: User | null, team: Team | null): boolean`. Logic should check if `team?.subscriptionStatus === 'active'` OR (`team?.subscriptionStatus === 'trialing'` AND `user?.trialEndDate` exists AND `user.trialEndDate > new Date()`).
     -   **Step Dependencies**: Step 3.3 (Context needs user/team data)
     -   **User Instructions**: None
 
--   [ ] Step 10.2: Verify Stripe Integration & Trial Logic
+-   [x] Step 10.2: Verify Stripe Integration & Trial Logic
     -   **Task**: Review and confirm the Stripe checkout action, webhook handler, and signup action correctly manage subscription status and trial dates as per the specification. Make minor adjustments if necessary.
     -   **Files**:
         -   `lib/payments/actions.ts`: Review `checkoutAction`.
