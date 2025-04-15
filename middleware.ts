@@ -39,6 +39,19 @@ const PUBLIC_ONLY_ROUTES = ['/sign-in', '/sign-up'];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('session');
+
+  // Skip middleware for public static files
+  if (pathname.match(/\.(css|js|png|jpg|jpeg|svg|ico)$/)) {
+    return NextResponse.next();
+  }
+
+  console.log(`Middleware: Processing request for ${pathname}`);
+  if (sessionCookie) {
+    console.log(`Middleware: Session cookie exists: ${sessionCookie.value.substring(0, 10)}...`);
+  } else {
+    console.log(`Middleware: No session cookie found`);
+  }
+
   let session: SessionData | null = null;
   let response = NextResponse.next(); // Default: allow request
 
@@ -46,10 +59,22 @@ export async function middleware(request: NextRequest) {
   if (sessionCookie?.value) {
     try {
       session = await verifyToken(sessionCookie.value);
-      if (!session || !session.expires || new Date(session.expires) < new Date()) {
-        // Invalid or expired session
+      
+      if (!session) {
+        console.log(`Middleware: Token verification returned null session`);
+      } else if (!session.expires) {
+        console.log(`Middleware: Session missing expires field`);
         session = null;
-        // Clear the invalid cookie
+      } else if (new Date(session.expires) < new Date()) {
+        console.log(`Middleware: Session expired at ${session.expires}`);
+        session = null;
+      } else {
+        console.log(`Middleware: Valid session for user ID ${session.user.id}`);
+      }
+      
+      if (!session) {
+        // Invalid or expired session
+        console.log(`Middleware: Clearing invalid session cookie`);
         response = NextResponse.next(); // Prepare a clean response first
         response.cookies.delete('session');
         // Don't redirect yet, let auth checks below handle it
@@ -65,12 +90,13 @@ export async function middleware(request: NextRequest) {
   }
 
   const isAuthenticated = !!session;
+  console.log(`Middleware: isAuthenticated = ${isAuthenticated}`);
 
   // 2. Handle redirects for authenticated users
   if (isAuthenticated) {
     // Redirect away from public-only routes
     if (PUBLIC_ONLY_ROUTES.some(route => pathname.startsWith(route))) {
-      console.log(`Middleware: Authenticated user accessing public-only route ${pathname}. Redirecting to /.`);
+      console.log(`Middleware: Authenticated user accessing public-only route ${pathname}. Redirecting to /`);
       return NextResponse.redirect(new URL('/', request.url));
     }
 
@@ -81,18 +107,27 @@ export async function middleware(request: NextRequest) {
           console.error("Middleware Error: Session is null despite isAuthenticated being true.");
           return response;
         }
+        
+        console.log(`Middleware: Refreshing session for user ${session.user.id}`);
         const refreshedToken = await signToken(session);
+        
+        // Create a new response to ensure we have a clean cookies object
         response = NextResponse.next();
-        response.cookies.set('session', refreshedToken, {
+        
+        // Set the refreshed session cookie with explicit parameters
+        response.cookies.set({
+          name: 'session',
+          value: refreshedToken,
           expires: new Date(session.expires),
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
+          secure: true, // Always use secure cookies in production
           sameSite: 'lax',
           path: '/',
         });
-         console.log(`Middleware: Refreshed session for user ${session.user.id} on route ${pathname}.`);
+        
+        console.log(`Middleware: Session refreshed successfully for ${pathname}`);
       } catch (refreshError) {
-         console.error("Middleware: Error refreshing session token:", refreshError);
+        console.error("Middleware: Error refreshing session token:", refreshError);
       }
     }
   }
@@ -100,20 +135,21 @@ export async function middleware(request: NextRequest) {
   // 3. Handle route protection for unauthenticated users
   if (!isAuthenticated && AUTH_ROUTES.some(route => pathname.startsWith(route))) {
     console.log(`Middleware: Unauthenticated user accessing protected route ${pathname}. Redirecting to /sign-in.`);
-    // Preserve the original destination path for redirect after login
-    // BUT only if the destination isn't a public-only route itself
-    const signInUrl = new URL('/sign-in', request.url);
     
-    // Only add the redirect param if the path isn't already a public route
-    if (!PUBLIC_ONLY_ROUTES.some(route => pathname.startsWith(route))) {
-      signInUrl.searchParams.set('redirect', pathname); // Add redirect param
+    // Special handling to avoid redirect loops
+    if (pathname === '/') {
+      return NextResponse.redirect(new URL('/sign-in', request.url));
     }
     
+    // For other protected routes, preserve the original destination path
+    const signInUrl = new URL('/sign-in', request.url);
+    signInUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(signInUrl);
   }
 
   // 4. Allow the request if none of the above conditions triggered a redirect
   // Return the response (which might have an updated cookie)
+  console.log(`Middleware: Allowing request to proceed to ${pathname}`);
   return response;
 }
 
