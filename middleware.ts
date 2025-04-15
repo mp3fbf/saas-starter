@@ -101,8 +101,14 @@ export async function middleware(request: NextRequest) {
   if (!isAuthenticated && AUTH_ROUTES.some(route => pathname.startsWith(route))) {
     console.log(`Middleware: Unauthenticated user accessing protected route ${pathname}. Redirecting to /sign-in.`);
     // Preserve the original destination path for redirect after login
+    // BUT only if the destination isn't a public-only route itself
     const signInUrl = new URL('/sign-in', request.url);
-    signInUrl.searchParams.set('redirect', pathname); // Add redirect param
+    
+    // Only add the redirect param if the path isn't already a public route
+    if (!PUBLIC_ONLY_ROUTES.some(route => pathname.startsWith(route))) {
+      signInUrl.searchParams.set('redirect', pathname); // Add redirect param
+    }
+    
     return NextResponse.redirect(signInUrl);
   }
 
